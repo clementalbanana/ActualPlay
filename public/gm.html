@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Interface MJ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-800 text-white p-4 font-sans">
+
+<div class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Colonne de Gauche : Contrôles & Logs -->
+    <div class="md:col-span-2 space-y-6">
+        <!-- Section Boss -->
+        <div class="bg-gray-900 rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Contrôle du Boss</h2>
+            <div class="mt-4 space-y-4">
+                <div>
+                    <label for="boss_name" class="block text-sm font-medium text-gray-400">Nom</label>
+                    <input type="text" id="boss_name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="boss_hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
+                        <input type="number" id="boss_hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="boss_hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
+                        <input type="number" id="boss_hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="boss_armor" class="block text-sm font-medium text-gray-400">Armure</label>
+                    <input type="number" id="boss_armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Log des Dés -->
+        <div class="bg-gray-900 rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                 <h2 class="text-xl font-semibold text-indigo-400">Journal des Lancers</h2>
+                 <button id="reset-dice" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm">Reset Dés</button>
+            </div>
+            <ul id="dice-log" class="mt-4 space-y-2 h-64 overflow-y-auto">
+                <!-- Les lancers de dés apparaîtront ici -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Colonne de Droite : Images -->
+    <div class="bg-gray-900 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Projection d'Images</h2>
+        <div id="image-list" class="mt-4 grid grid-cols-2 gap-4 h-full overflow-y-auto">
+            <!-- Les images à projeter apparaîtront ici -->
+        </div>
+    </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="gm.js"></script>
+</body>
+</html>

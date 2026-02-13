@@ -2,13 +2,53 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Overlay JdR</title>
+    <title>Interface Joueur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<h1>Overlay Stream JdR</h1>
-<div id="game-info">Chargement des données...</div>
+<body class="bg-gray-800 text-white p-4">
+
+<div class="max-w-md mx-auto bg-gray-900 rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+    <div class="p-8">
+        <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Fiche de Personnage</div>
+        <div class="mt-4">
+            <label for="name" class="block text-sm font-medium text-gray-400">Nom</label>
+            <input type="text" id="name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-4">
+            <div>
+                <label for="hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
+                <input type="number" id="hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
+                <input type="number" id="hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+        </div>
+        <div class="mt-4">
+            <label for="armor" class="block text-sm font-medium text-gray-400">Armure</label>
+            <input type="number" id="armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+        <div class="mt-4">
+            <label for="gold" class="block text-sm font-medium text-gray-400">Or</label>
+            <input type="number" id="gold" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <div class="mt-8">
+            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Lancer de Dés</div>
+            <div id="dice-buttons" class="mt-4 grid grid-cols-3 md:grid-cols-7 gap-4">
+                <button data-dice="4" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d4</button>
+                <button data-dice="6" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d6</button>
+                <button data-dice="8" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d8</button>
+                <button data-dice="10" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d10</button>
+                <button data-dice="12" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d12</button>
+                <button data-dice="20" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d20</button>
+                <button data-dice="100" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d100</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
