@@ -1,0 +1,144 @@
+/* --- Configuration Générale --- */
+body {
+    font-family: 'Cinzel', serif;
+    background-color: transparent;
+    color: #EAEAEA;
+    overflow: hidden; /* Empêche les barres de défilement dans OBS */
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Fiches des Joueurs --- */
+#player-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.player-card {
+    background: rgba(15, 15, 15, 0.8);
+    border: 1px solid #4a3a2a;
+    border-radius: 8px;
+    padding: 10px 15px;
+    width: 300px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
+}
+
+.player-card h3 {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #D4AF37; /* Or */
+    text-shadow: 1px 1px 2px black;
+}
+
+.hp-bar-container {
+    width: 100%;
+    background-color: #333;
+    border-radius: 5px;
+    height: 18px;
+    margin-top: 5px;
+    border: 1px solid #222;
+    position: relative;
+}
+
+.hp-bar {
+    background-color: #8B0000; /* Rouge sang */
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease-in-out;
+}
+
+.hp-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 1px black;
+}
+
+.player-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+.stat {
+    color: #C0C0C0; /* Argent */
+}
+.stat-value {
+    font-weight: bold;
+    color: white;
+}
+
+/* --- Notifications de Dés --- */
+#dice-roll-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    z-index: 100;
+}
+
+.dice-notification {
+    background: rgba(20, 20, 20, 0.9);
+    border: 2px solid #D4AF37;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    animation: fadeInOut 5s ease-in-out forwards;
+}
+
+.dice-notification .player-name {
+    font-size: 1.2em;
+    color: #EAEAEA;
+}
+
+.dice-notification .dice-result {
+    font-size: 4em;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-shadow: 0 0 10px #D4AF37, 0 0 20px #D4AF37;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+    15% { opacity: 1; transform: translateY(0) scale(1); }
+    85% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+}
+
+/* --- Affichage d'Image --- */
+#image-display-area {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 60%;
+    max-height: 60%;
+    z-index: 50;
+}
+
+#projected-image {
+    max-width: 100%;
+    max-height: 100%;
+    border: 3px solid #4a3a2a;
+    border-radius: 5px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.7s ease-in-out;
+}
+
+#projected-image.visible {
+    opacity: 1;
+}

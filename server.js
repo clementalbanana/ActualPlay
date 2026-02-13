@@ -18,9 +18,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 3. Objet JSON 'gameState' (État du jeu)
 let gameState = {
     players: [
-        { id: 1, name: "Grog", hp: 45, maxHp: 45, armor: 16, gold: 50, class: "Barbare" },
-        { id: 2, name: "Vex", hp: 30, maxHp: 30, armor: 14, gold: 120, class: "Rôdeur" },
-        { id: 3, name: "Scanlan", hp: 25, maxHp: 25, armor: 12, gold: 200, class: "Barde" }
     ],
     boss: {
         name: "Seigneur Vampire",
@@ -112,4 +109,5 @@ server.listen(PORT, () => {
     console.log(`Serveur JdR lancé sur http://localhost:${PORT}`);
     console.log(`Interface Joueur: http://localhost:${PORT}/`);
     console.log(`Interface MJ: http://localhost:${PORT}/gm.html`);
+    console.log(`Overlay : http://localhost:${PORT}/overlay.html`);
 });

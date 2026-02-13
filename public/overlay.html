@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Overlay JdR Stream</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+
+    <!-- Zone pour l'affichage des images projetées par le MJ -->
+    <div id="image-display-area">
+        <img id="projected-image" src="" alt="Image projetée">
+    </div>
+
+    <!-- Zone pour les notifications de lancers de dés -->
+    <div id="dice-roll-display">
+        <!-- Les notifications de dés apparaîtront ici -->
+    </div>
+
+    <!-- Conteneur pour les fiches des joueurs -->
+    <div id="player-container">
+        <!-- Les fiches de joueurs seront générées par JS ici -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="overlay.js"></script>
+</body>
+</html>

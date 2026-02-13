@@ -36,6 +36,26 @@
             </div>
         </div>
 
+        <!-- Section Lancer de Dés MJ -->
+        <div class="bg-gray-900 rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Lancer de Dés (MJ)</h2>
+            <div class="mt-4 space-y-4">
+                <div>
+                    <label for="gm_roller_name" class="block text-sm font-medium text-gray-400">Nom du Lanceur</label>
+                    <input type="text" id="gm_roller_name" value="MJ" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div id="gm-dice-buttons" class="grid grid-cols-3 md:grid-cols-7 gap-4">
+                    <button data-dice="4" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d4</button>
+                    <button data-dice="6" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d6</button>
+                    <button data-dice="8" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d8</button>
+                    <button data-dice="10" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d10</button>
+                    <button data-dice="12" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d12</button>
+                    <button data-dice="20" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d20</button>
+                    <button data-dice="100" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d100</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Section Log des Dés -->
         <div class="bg-gray-900 rounded-xl shadow-md p-6">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">

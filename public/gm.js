@@ -28,6 +28,27 @@ bossInputs.forEach(id => {
     document.getElementById(id).addEventListener('input', sendBossUpdate);
 });
 
+// --- Lancer de Dés du MJ ---
+const gmDiceButtons = document.querySelectorAll('.dice-btn-gm');
+const gmRollerNameInput = document.getElementById('gm_roller_name');
+
+function gmRollDice(sides) {
+    const result = Math.floor(Math.random() * sides) + 1;
+    const rollerName = gmRollerNameInput.value || 'MJ'; // Utilise 'MJ' si le champ est vide
+    socket.emit('rollDice', {
+        player: rollerName,
+        dice: `d${sides}`,
+        result: result
+    });
+}
+
+gmDiceButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const sides = button.dataset.dice;
+        gmRollDice(sides);
+    });
+});
+
 
 // --- Gestion des Images ---
 const imageList = document.getElementById('image-list');
