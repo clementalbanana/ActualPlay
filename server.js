@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer'); // Ajout de multer
 
 const app = express();
 const server = http.createServer(app);
@@ -11,21 +12,56 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- Configuration de Multer pour l'upload d'images ---
+const imageDir = path.join(__dirname, 'public/images');
+
+// S'assurer que le dossier d'upload existe
+if (!fs.existsSync(imageDir)){
+    fs.mkdirSync(imageDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, imageDir);
+    },
+    filename: function (req, file, cb) {
+        // Garde le nom de fichier original
+        cb(null, file.originalname);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Accepte uniquement les fichiers image
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') {
+        cb(null, true);
+    } else {
+        cb(new Error('Type de fichier non supporté'), false);
+    }
+};
+
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+// --- Route API pour l'upload ---
+app.post('/upload', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('Aucun fichier valide n\'a été uploadé.');
+    }
+    // L'upload a réussi, on notifie le MJ pour qu'il rafraîchisse sa liste
+    // On utilise un broadcast global car seul le MJ écoute cet événement
+    io.emit('refreshImageList');
+    res.status(200).send(`Fichier ${req.file.filename} uploadé avec succès.`);
+});
+
+
 // --- État du Jeu & Gestion des "Sessions" ---
 let gameState = {
     players: [],
     boss: { name: "Seigneur Vampire", hp: 250, maxHp: 250, armor: 18 }
 };
-
-// Associe un socket.id à un ID de joueur. C'est notre "système de salles".
-// Format: { "socketId123": 1, "socketId456": 2 }
 let claimedCharacters = {};
 
 // --- Fonctions Utilitaires ---
-function rollDie(sides) {
-    return Math.floor(Math.random() * sides) + 1;
-}
-
+function rollDie(sides) { return Math.floor(Math.random() * sides) + 1; }
 function getPlayerBySocketId(socketId) {
     const playerId = claimedCharacters[socketId];
     return gameState.players.find(p => p.id === playerId);
@@ -34,7 +70,6 @@ function getPlayerBySocketId(socketId) {
 // --- Gestion des Connexions Socket.io ---
 io.on('connection', (socket) => {
     console.log(`Client connecté: ${socket.id}`);
-
     socket.emit('gameStateUpdate', gameState);
 
     // --- ÉVÉNEMENTS DE GESTION DE PERSONNAGE ---
@@ -95,7 +130,7 @@ io.on('connection', (socket) => {
         else if (data.player) {
             rollerName = data.player;
         }
-        
+
         const diceData = { player: rollerName, dice: data.dice, result: result };
         console.log('Lancer de dé généré par le serveur:', diceData);
         io.emit('diceRolled', diceData);
@@ -108,11 +143,21 @@ io.on('connection', (socket) => {
         io.emit('gameStateUpdate', gameState);
     });
 
-    socket.on('listImages', () => { /* ... reste identique ... */ });
+    socket.on('listImages', () => {
+        fs.readdir(imageDir, (err, files) => {
+            if (err) {
+                console.error("Impossible de lire le dossier d'images:", err);
+                socket.emit('imageList', []);
+                return;
+            }
+            const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+            socket.emit('imageList', imageFiles);
+        });
+    });
+
     socket.on('projectImage', (imageUrl) => io.emit('showImage', imageUrl));
     socket.on('resetDice', () => io.emit('diceCleared'));
 
-    // --- DÉCONNEXION ---
     socket.on('disconnect', () => {
         console.log(`Client déconnecté: ${socket.id}`);
         const playerId = claimedCharacters[socket.id];

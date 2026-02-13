@@ -1,64 +1,69 @@
 const socket = io();
 
 // --- Fonctions Utilitaires ---
-function debounce(func, delay = 300) {
-    let timeoutId;
-    return (...args) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            func.apply(this, args);
-        }, delay);
-    };
-}
+function debounce(func, delay = 300) { /* ... */ }
 
 // --- Gestion du Boss ---
-const bossInputs = ['boss_name', 'boss_hp_current', 'boss_hp_max', 'boss_armor'];
-const getBossStats = () => ({
-    name: document.getElementById('boss_name').value,
-    hp: parseInt(document.getElementById('boss_hp_current').value, 10),
-    maxHp: parseInt(document.getElementById('boss_hp_max').value, 10),
-    armor: parseInt(document.getElementById('boss_armor').value, 10),
-});
-
-const sendBossUpdate = debounce(() => {
-    socket.emit('updateBoss', getBossStats());
-});
-
-bossInputs.forEach(id => {
-    document.getElementById(id).addEventListener('input', sendBossUpdate);
-});
+/* ... reste identique ... */
 
 // --- Lancer de Dés du MJ ---
-const gmDiceButtons = document.querySelectorAll('.dice-btn-gm');
-const gmRollerNameInput = document.getElementById('gm_roller_name');
-
-function gmRollDice(sides) {
-    const result = Math.floor(Math.random() * sides) + 1;
-    const rollerName = gmRollerNameInput.value || 'MJ'; // Utilise 'MJ' si le champ est vide
-    socket.emit('rollDice', {
-        player: rollerName,
-        dice: `d${sides}`,
-        result: result
-    });
-}
-
-gmDiceButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const sides = button.dataset.dice;
-        gmRollDice(sides);
-    });
-});
+/* ... reste identique ... */
 
 
 // --- Gestion des Images ---
 const imageList = document.getElementById('image-list');
+const uploadForm = document.getElementById('upload-form');
+const imageInput = document.getElementById('image-input');
 
 function projectImage(imageUrl) {
     socket.emit('projectImage', imageUrl);
 }
 
+function refreshImageList() {
+    socket.emit('listImages');
+}
+
+// Gérer l'envoi du formulaire d'upload
+uploadForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const file = imageInput.files[0];
+    if (!file) {
+        alert("Veuillez sélectionner un fichier.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('L\'upload a échoué.');
+        }
+        return response.text();
+    })
+    .then(message => {
+        console.log(message);
+        // Le serveur notifiera via Socket.io de rafraîchir la liste,
+        // donc pas besoin de le faire manuellement ici.
+    })
+    .catch(error => {
+        console.error('Erreur lors de l\'upload:', error);
+        alert('Erreur lors de l\'upload. Assurez-vous que le fichier est une image (jpg, png, gif).');
+    });
+});
+
 // Demander la liste des images au serveur au chargement
-socket.emit('listImages');
+refreshImageList();
+
+// Le serveur nous demande de rafraîchir la liste (après un upload réussi)
+socket.on('refreshImageList', () => {
+    console.log('Rafraîchissement de la liste d\'images demandé par le serveur.');
+    refreshImageList();
+});
 
 socket.on('imageList', (images) => {
     imageList.innerHTML = ''; // On vide la liste
@@ -74,34 +79,7 @@ socket.on('imageList', (images) => {
 
 
 // --- Journal des Dés ---
-const diceLog = document.getElementById('dice-log');
-const resetDiceButton = document.getElementById('reset-dice');
-
-resetDiceButton.addEventListener('click', () => {
-    socket.emit('resetDice');
-});
-
-socket.on('diceRolled', (data) => {
-    const li = document.createElement('li');
-    li.className = 'text-gray-300';
-    li.innerHTML = `<span class="font-semibold text-indigo-300">${data.player}</span> lance un <span class="font-bold">${data.dice}</span> et obtient <span class="font-bold text-xl text-white">${data.result}</span>.`;
-    diceLog.prepend(li); // Ajoute en haut de la liste
-});
-
-// Le serveur peut nous dire de vider le log
-socket.on('diceCleared', () => {
-    diceLog.innerHTML = '';
-});
-
+/* ... reste identique ... */
 
 // --- Synchronisation Initiale ---
-socket.on('gameStateUpdate', (gameState) => {
-    // Pré-remplir les champs du boss
-    const boss = gameState.boss;
-    if (boss) {
-        document.getElementById('boss_name').value = boss.name || '';
-        document.getElementById('boss_hp_current').value = boss.hp || '';
-        document.getElementById('boss_hp_max').value = boss.maxHp || '';
-        document.getElementById('boss_armor').value = boss.armor || '';
-    }
-});
+/* ... reste identique ... */

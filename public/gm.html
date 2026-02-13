@@ -69,9 +69,16 @@
     </div>
 
     <!-- Colonne de Droite : Images -->
-    <div class="bg-gray-900 rounded-xl shadow-md p-6">
+    <div class="bg-gray-900 rounded-xl shadow-md p-6 flex flex-col">
         <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Projection d'Images</h2>
-        <div id="image-list" class="mt-4 grid grid-cols-2 gap-4 h-full overflow-y-auto">
+
+        <!-- Formulaire d'upload -->
+        <form id="upload-form" class="mt-4">
+            <input type="file" id="image-input" name="image" accept="image/png, image/jpeg, image/gif" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+            <button type="submit" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Envoyer l'image</button>
+        </form>
+
+        <div id="image-list" class="mt-4 grid grid-cols-2 gap-4 overflow-y-auto flex-grow">
             <!-- Les images à projeter apparaîtront ici -->
         </div>
     </div>
