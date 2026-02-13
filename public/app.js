@@ -1,59 +1,77 @@
 const socket = io();
 
+// --- Éléments du DOM ---
+const nameInput = document.getElementById('name');
+const hpCurrentInput = document.getElementById('hp_current');
+const hpMaxInput = document.getElementById('hp_max');
+const armorInput = document.getElementById('armor');
+const goldInput = document.getElementById('gold');
+const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
+const diceButtons = document.querySelectorAll('.dice-btn');
+
+// --- État Local ---
+let characterClaimed = false;
+
 // --- Fonctions ---
 
-// Debounce pour limiter la fréquence des mises à jour
-function debounce(func, delay = 250) {
+function debounce(func, delay = 300) {
     let timeoutId;
     return (...args) => {
         clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            func.apply(this, args);
-        }, delay);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
 }
 
-// Récupérer les stats du formulaire
+// Met à jour le formulaire avec les données reçues
+function updateForm(player) {
+    hpCurrentInput.value = player.hp;
+    hpMaxInput.value = player.maxHp;
+    armorInput.value = player.armor;
+    goldInput.value = player.gold;
+}
+
+// Récupère les stats du formulaire pour l'envoi
 function getStats() {
     return {
-        name: document.getElementById('name').value,
-        hp_current: document.getElementById('hp_current').value,
-        hp_max: document.getElementById('hp_max').value,
-        armor: document.getElementById('armor').value,
-        gold: document.getElementById('gold').value,
+        hp_current: hpCurrentInput.value,
+        hp_max: hpMaxInput.value,
+        armor: armorInput.value,
+        gold: goldInput.value,
     };
 }
 
-// Envoyer les stats au serveur
+// Envoie les stats au serveur (uniquement si un personnage est "claim")
 const sendStatsUpdate = debounce(() => {
-    const stats = getStats();
-    if (stats.name) { // On n'envoie que si le nom est défini
-        socket.emit('updateStats', stats);
+    if (characterClaimed) {
+        socket.emit('updateStats', getStats());
     }
 });
 
-// Lancer un dé
+// Envoie la demande de lancer de dé au serveur
 function rollDice(sides) {
-    const result = Math.floor(Math.random() * sides) + 1;
-    const playerName = document.getElementById('name').value || 'Un joueur';
-    socket.emit('rollDice', {
-        player: playerName,
-        dice: `d${sides}`,
-        result: result
-    });
+    if (characterClaimed) {
+        socket.emit('rollDice', { dice: `d${sides}` });
+    } else {
+        alert("Veuillez d'abord choisir un nom de personnage.");
+    }
 }
-
 
 // --- Écouteurs d'événements ---
 
-// Champs de saisie
-const inputs = document.querySelectorAll('input');
-inputs.forEach(input => {
+// Quand l'utilisateur a fini de taper son nom, il "réclame" le personnage
+nameInput.addEventListener('change', () => {
+    const characterName = nameInput.value.trim();
+    if (characterName) {
+        socket.emit('claimCharacter', characterName);
+    }
+});
+
+// Les autres champs envoient des mises à jour
+allInputs.forEach(input => {
     input.addEventListener('input', sendStatsUpdate);
 });
 
 // Boutons de dés
-const diceButtons = document.querySelectorAll('.dice-btn');
 diceButtons.forEach(button => {
     button.addEventListener('click', () => {
         const sides = button.dataset.dice;
@@ -61,23 +79,41 @@ diceButtons.forEach(button => {
     });
 });
 
-// --- Réception des données du serveur (pour synchroniser si nécessaire) ---
-socket.on('updateStats', (stats) => {
-    // On met à jour l'interface uniquement si les données sont différentes
-    // pour éviter de perturber la saisie de l'utilisateur.
-    if (document.getElementById('name').value !== stats.name) {
-        document.getElementById('name').value = stats.name;
+// --- Réception des événements du Serveur ---
+
+socket.on('claimSuccess', (player) => {
+    console.log('Personnage récupéré avec succès:', player);
+    characterClaimed = true;
+    nameInput.disabled = true; // On verrouille le champ nom
+    nameInput.classList.add('bg-gray-600'); // Style visuel pour indiquer le verrouillage
+    updateForm(player);
+});
+
+socket.on('claimError', (errorMessage) => {
+    alert(errorMessage);
+    characterClaimed = false;
+    nameInput.value = ''; // Réinitialise le champ nom
+});
+
+// Le serveur envoie l'état complet du jeu, on cherche notre personnage pour se mettre à jour
+socket.on('gameStateUpdate', (gameState) => {
+    if (!characterClaimed) return; // Ne fait rien si on ne contrôle pas encore de perso
+
+    const myPlayer = gameState.players.find(p => p.name === nameInput.value);
+    if (myPlayer) {
+        // On met à jour le formulaire uniquement si les données sont différentes
+        // pour éviter de perturber la saisie de l'utilisateur.
+        if (hpCurrentInput.value != myPlayer.hp) hpCurrentInput.value = myPlayer.hp;
+        if (hpMaxInput.value != myPlayer.maxHp) hpMaxInput.value = myPlayer.maxHp;
+        if (armorInput.value != myPlayer.armor) armorInput.value = myPlayer.armor;
+        if (goldInput.value != myPlayer.gold) goldInput.value = myPlayer.gold;
     }
-    if (document.getElementById('hp_current').value !== stats.hp_current) {
-        document.getElementById('hp_current').value = stats.hp_current;
-    }
-    if (document.getElementById('hp_max').value !== stats.hp_max) {
-        document.getElementById('hp_max').value = stats.hp_max;
-    }
-     if (document.getElementById('armor').value !== stats.armor) {
-        document.getElementById('armor').value = stats.armor;
-    }
-     if (document.getElementById('gold').value !== stats.gold) {
-        document.getElementById('gold').value = stats.gold;
-    }
+});
+
+// Gère la déconnexion pour réactiver le champ nom
+socket.on('disconnect', () => {
+    characterClaimed = false;
+    nameInput.disabled = false;
+    nameInput.classList.remove('bg-gray-600');
+    alert("Déconnecté du serveur. Vous pouvez essayer de vous reconnecter ou de choisir un autre personnage.");
 });
