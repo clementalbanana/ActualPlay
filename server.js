@@ -155,7 +155,13 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Nouveaux événements pour la gestion d'images
+    socket.on('displayImage', (imageUrl) => io.emit('showImage', imageUrl));
+    socket.on('hideImage', () => io.emit('hideImage'));
+    
+    // Ancien événement (pour compatibilité si nécessaire, ou à supprimer)
     socket.on('projectImage', (imageUrl) => io.emit('showImage', imageUrl));
+    
     socket.on('resetDice', () => io.emit('diceCleared'));
 
     socket.on('disconnect', () => {

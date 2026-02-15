@@ -90,7 +90,7 @@ body {
 
 .dice-notification {
     background: rgba(20, 20, 20, 0.9);
-    border: 2px solid #D4AF37;
+    border: 1px solid #c49e2d;
     border-radius: 10px;
     padding: 20px;
     text-align: center;
@@ -124,15 +124,14 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     max-width: 60%;
-    max-height: 60%;
+    /*max-height: 60%;*/
     z-index: 50;
 }
 
 #projected-image {
     max-width: 100%;
     max-height: 100%;
-    border: 3px solid #4a3a2a;
-    border-radius: 5px;
+    border: 2px solid #c49e2d;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
     opacity: 0;
     transition: opacity 0.7s ease-in-out;

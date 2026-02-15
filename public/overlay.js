@@ -71,6 +71,16 @@ function showImage(imageUrl) {
     }
 }
 
+function hideImage() {
+    projectedImage.classList.remove('visible');
+    // On attend la fin de la transition pour vider la source (optionnel mais propre)
+    setTimeout(() => {
+        if (!projectedImage.classList.contains('visible')) {
+            projectedImage.src = "";
+        }
+    }, 700); // Correspond à la durée de transition CSS (0.7s)
+}
+
 
 // --- Écouteurs Socket.io ---
 
@@ -106,12 +116,10 @@ socket.on('showImage', (imageUrl) => {
     showImage(imageUrl);
 });
 
+socket.on('hideImage', () => {
+    hideImage();
+});
+
 socket.on('diceCleared', () => {
     // On pourrait ajouter une animation de "nettoyage" ici si on voulait
 });
-
-// Gérer le cas où le MJ veut cacher l'image
-// On peut conventionnellement utiliser un événement 'hideImage' ou envoyer une URL vide à 'showImage'
-// Pour l'instant, on peut imaginer que le MJ envoie une image vide.
-// Pour une meilleure robustesse, on pourrait ajouter :
-// socket.on('hideImage', () => showImage(null));
