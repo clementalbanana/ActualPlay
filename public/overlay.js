@@ -17,8 +17,27 @@ function createPlayerCard(player) {
     const card = document.createElement('div');
     card.className = 'player-card';
     card.id = `player-${player.id}`;
+    
+    // Le contenu sera rempli par updatePlayerCard
+    return card;
+}
+
+function updatePlayerCard(player) {
+    let card = document.getElementById(`player-${player.id}`);
+    if (!card) {
+        card = createPlayerCard(player);
+        playerContainer.appendChild(card);
+    }
 
     const hpPercentage = (player.hp / player.maxHp) * 100;
+
+    // Génération dynamique des stats personnalisées
+    let customStatsHtml = '';
+    if (player.customStats && player.customStats.length > 0) {
+        customStatsHtml = player.customStats.map(stat => `
+            <span class="stat">${stat.name}: <span class="stat-value">${stat.value}</span></span>
+        `).join('');
+    }
 
     card.innerHTML = `
         <h3>${player.name}</h3>
@@ -29,26 +48,9 @@ function createPlayerCard(player) {
         <div class="player-stats">
             <span class="stat">Armure: <span class="stat-value armor-value">${player.armor}</span></span>
             <span class="stat">Or: <span class="stat-value gold-value">${player.gold}</span></span>
+            ${customStatsHtml}
         </div>
     `;
-    return card;
-}
-
-function updatePlayerCard(player) {
-    const card = document.getElementById(`player-${player.id}`);
-    if (!card) return;
-
-    const hpPercentage = (player.hp / player.maxHp) * 100;
-
-    card.querySelector('h3').innerText = player.name;
-    card.querySelector('.hp-bar').style.width = `${hpPercentage}%`;
-    card.querySelector('.hp-text').innerText = `${player.hp} / ${player.maxHp}`;
-    
-    const armorEl = card.querySelector('.armor-value');
-    if (armorEl) armorEl.innerText = player.armor;
-    
-    const goldEl = card.querySelector('.gold-value');
-    if (goldEl) goldEl.innerText = player.gold;
 }
 
 
@@ -140,13 +142,7 @@ function hideImage() {
 socket.on('gameStateUpdate', (gameState) => {
     // Mettre à jour les joueurs
     gameState.players.forEach(player => {
-        const existingCard = document.getElementById(`player-${player.id}`);
-        if (existingCard) {
-            updatePlayerCard(player);
-        } else {
-            const newCard = createPlayerCard(player);
-            playerContainer.appendChild(newCard);
-        }
+        updatePlayerCard(player);
     });
 
     // Supprimer les joueurs qui ne sont plus dans le gameState

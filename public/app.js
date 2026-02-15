@@ -15,9 +15,19 @@ const emptyTrayMsg = document.getElementById('empty-tray-msg');
 const btnRollTray = document.getElementById('btn-roll-tray');
 const btnClearTray = document.getElementById('btn-clear-tray');
 
+// Éléments Stats Personnalisées
+const btnAddStat = document.getElementById('btn-add-stat');
+const addStatForm = document.getElementById('add-stat-form');
+const btnCancelStat = document.getElementById('btn-cancel-stat');
+const btnConfirmStat = document.getElementById('btn-confirm-stat');
+const newStatName = document.getElementById('new-stat-name');
+const newStatValue = document.getElementById('new-stat-value');
+const customStatsList = document.getElementById('custom-stats-list');
+
 // --- État Local ---
 let characterClaimed = false;
 let diceBasket = []; // Stocke les dés à plat : ['d6', 'd6', 'd20']
+let customStats = []; // [{ name: 'Mana', value: '10/20' }]
 
 // --- Fonctions ---
 
@@ -35,6 +45,11 @@ function updateForm(player) {
     hpMaxInput.value = player.maxHp;
     armorInput.value = player.armor;
     goldInput.value = player.gold;
+    
+    if (player.customStats) {
+        customStats = player.customStats;
+        renderCustomStats();
+    }
 }
 
 // Récupère les stats du formulaire pour l'envoi
@@ -44,6 +59,7 @@ function getStats() {
         hp_max: hpMaxInput.value,
         armor: armorInput.value,
         gold: goldInput.value,
+        customStats: customStats
     };
 }
 
@@ -53,6 +69,87 @@ const sendStatsUpdate = debounce(() => {
         socket.emit('updateStats', getStats());
     }
 });
+
+// --- Gestion des Stats Personnalisées ---
+
+function renderCustomStats() {
+    customStatsList.innerHTML = '';
+    customStats.forEach((stat, index) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between bg-gray-700 p-2 rounded';
+        
+        div.innerHTML = `
+            <div class="flex-1 grid grid-cols-2 gap-2 mr-2">
+                <input type="text" value="${stat.name}" class="bg-gray-600 border-none rounded px-2 py-1 text-sm text-white focus:ring-1 focus:ring-indigo-500 stat-name-input" data-index="${index}">
+                <input type="text" value="${stat.value}" class="bg-gray-600 border-none rounded px-2 py-1 text-sm text-white focus:ring-1 focus:ring-indigo-500 stat-value-input" data-index="${index}">
+            </div>
+            <button class="text-red-400 hover:text-red-600 p-1 delete-stat-btn" data-index="${index}" title="Supprimer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        `;
+        customStatsList.appendChild(div);
+    });
+
+    // Ajout des écouteurs pour la modification en direct
+    document.querySelectorAll('.stat-name-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = e.target.dataset.index;
+            customStats[idx].name = e.target.value;
+            sendStatsUpdate();
+        });
+    });
+
+    document.querySelectorAll('.stat-value-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = e.target.dataset.index;
+            customStats[idx].value = e.target.value;
+            sendStatsUpdate();
+        });
+    });
+
+    document.querySelectorAll('.delete-stat-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Remonter jusqu'au bouton si le clic est sur l'icône SVG
+            const target = e.target.closest('button');
+            const idx = target.dataset.index;
+            customStats.splice(idx, 1);
+            renderCustomStats();
+            sendStatsUpdate();
+        });
+    });
+}
+
+btnAddStat.addEventListener('click', () => {
+    addStatForm.classList.remove('hidden');
+    newStatName.focus();
+});
+
+btnCancelStat.addEventListener('click', () => {
+    addStatForm.classList.add('hidden');
+    newStatName.value = '';
+    newStatValue.value = '';
+});
+
+btnConfirmStat.addEventListener('click', () => {
+    const name = newStatName.value.trim();
+    const value = newStatValue.value.trim();
+    
+    if (name && value) {
+        customStats.push({ name, value });
+        renderCustomStats();
+        sendStatsUpdate();
+        
+        // Reset form
+        newStatName.value = '';
+        newStatValue.value = '';
+        addStatForm.classList.add('hidden');
+    } else {
+        alert("Veuillez remplir le nom et la valeur.");
+    }
+});
+
 
 // --- Gestion du Panier de Dés ---
 
@@ -169,6 +266,13 @@ socket.on('gameStateUpdate', (gameState) => {
         if (hpMaxInput.value != myPlayer.maxHp) hpMaxInput.value = myPlayer.maxHp;
         if (armorInput.value != myPlayer.armor) armorInput.value = myPlayer.armor;
         if (goldInput.value != myPlayer.gold) goldInput.value = myPlayer.gold;
+        
+        // Mise à jour des stats custom si elles ont changé côté serveur (ex: rechargement page)
+        // On compare grossièrement pour éviter de redessiner si c'est nous qui venons d'envoyer
+        if (JSON.stringify(myPlayer.customStats) !== JSON.stringify(customStats)) {
+             customStats = myPlayer.customStats || [];
+             renderCustomStats();
+        }
     }
 });
 

@@ -33,6 +33,31 @@
             <input type="number" id="gold" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
+        <!-- Section Statistiques Personnalisées -->
+        <div class="mt-8">
+            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold flex justify-between items-center">
+                <span>Statistiques Personnalisées</span>
+                <button id="btn-add-stat" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-2 rounded">Ajouter</button>
+            </div>
+            
+            <!-- Formulaire d'ajout (caché par défaut) -->
+            <div id="add-stat-form" class="hidden mt-4 bg-gray-800 p-4 rounded border border-gray-700">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white">
+                    <input type="text" id="new-stat-value" placeholder="Valeur (ex: 10/20)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white">
+                </div>
+                <div class="mt-2 flex justify-end space-x-2">
+                    <button id="btn-cancel-stat" class="text-gray-400 hover:text-white text-xs">Annuler</button>
+                    <button id="btn-confirm-stat" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-3 rounded">Valider</button>
+                </div>
+            </div>
+
+            <!-- Liste des stats -->
+            <div id="custom-stats-list" class="mt-4 space-y-2">
+                <!-- Les stats ajoutées apparaîtront ici -->
+            </div>
+        </div>
+
         <div class="mt-8">
             <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Lancer de Dés</div>
             

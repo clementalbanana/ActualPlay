@@ -89,7 +89,8 @@ io.on('connection', (socket) => {
             player = {
                 id: gameState.players.length > 0 ? Math.max(...gameState.players.map(p => p.id)) + 1 : 1,
                 name: characterName,
-                hp: 10, maxHp: 10, armor: 10, gold: 0
+                hp: 10, maxHp: 10, armor: 10, gold: 0,
+                customStats: [] // Initialisation des stats personnalisées
             };
             gameState.players.push(player);
         }
@@ -110,6 +111,11 @@ io.on('connection', (socket) => {
         player.maxHp = parseInt(playerData.hp_max, 10) || player.maxHp;
         player.armor = parseInt(playerData.armor, 10) || player.armor;
         player.gold = parseInt(playerData.gold, 10) || player.gold;
+        
+        // Mise à jour des stats personnalisées si présentes
+        if (playerData.customStats) {
+            player.customStats = playerData.customStats;
+        }
 
         io.emit('gameStateUpdate', gameState);
     });
