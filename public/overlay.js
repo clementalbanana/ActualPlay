@@ -20,8 +20,8 @@ function createPlayerCard(player) {
             <span class="hp-text">${player.hp} / ${player.maxHp}</span>
         </div>
         <div class="player-stats">
-            <span class="stat">Armure: <span class="stat-value">${player.armor}</span></span>
-            <span class="stat">Or: <span class="stat-value">${player.gold}</span></span>
+            <span class="stat">Armure: <span class="stat-value armor-value">${player.armor}</span></span>
+            <span class="stat">Or: <span class="stat-value gold-value">${player.gold}</span></span>
         </div>
     `;
     return card;
@@ -36,8 +36,13 @@ function updatePlayerCard(player) {
     card.querySelector('h3').innerText = player.name;
     card.querySelector('.hp-bar').style.width = `${hpPercentage}%`;
     card.querySelector('.hp-text').innerText = `${player.hp} / ${player.maxHp}`;
-    card.querySelector('.stat-value:nth-of-type(1)').innerText = player.armor;
-    card.querySelector('.stat-value:nth-of-type(2)').innerText = player.gold;
+    
+    // Mise à jour ciblée avec les nouvelles classes
+    const armorEl = card.querySelector('.armor-value');
+    if (armorEl) armorEl.innerText = player.armor;
+    
+    const goldEl = card.querySelector('.gold-value');
+    if (goldEl) goldEl.innerText = player.gold;
 }
 
 
