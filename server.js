@@ -115,10 +115,42 @@ io.on('connection', (socket) => {
     });
 
     socket.on('rollDice', (data) => {
-        const sides = parseInt(data.dice.replace('d', ''), 10);
-        if (isNaN(sides)) return;
+        // data.dice peut être :
+        // 1. Une chaîne "d20" (ancien format)
+        // 2. Un tableau d'objets [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
+        
+        let diceToRoll = [];
+        
+        if (Array.isArray(data.dice)) {
+            // Format [{type: 'd6', qty: 2}]
+            data.dice.forEach(item => {
+                if (item.type && item.qty) {
+                    for (let i = 0; i < item.qty; i++) {
+                        diceToRoll.push(item.type);
+                    }
+                } else if (typeof item === 'string') {
+                    // Cas où on recevrait ['d6', 'd6'] directement
+                    diceToRoll.push(item);
+                }
+            });
+        } else if (typeof data.dice === 'string') {
+            diceToRoll = [data.dice];
+        } else {
+            return; // Format invalide
+        }
 
-        const result = rollDie(sides);
+        let results = [];
+        let total = 0;
+
+        diceToRoll.forEach(dieType => {
+            const sides = parseInt(dieType.replace('d', ''), 10);
+            if (!isNaN(sides)) {
+                const val = rollDie(sides);
+                results.push({ type: dieType, value: val });
+                total += val;
+            }
+        });
+
         let rollerName = "Anonyme";
 
         // Si le lancer vient d'un joueur authentifié
@@ -131,7 +163,12 @@ io.on('connection', (socket) => {
             rollerName = data.player;
         }
 
-        const diceData = { player: rollerName, dice: data.dice, result: result };
+        const diceData = { 
+            player: rollerName, 
+            results: results, // [{type: 'd6', value: 4}, {type: 'd20', value: 15}]
+            total: total 
+        };
+        
         console.log('Lancer de dé généré par le serveur:', diceData);
         io.emit('diceRolled', diceData);
     });

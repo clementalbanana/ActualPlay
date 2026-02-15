@@ -9,8 +9,15 @@ const goldInput = document.getElementById('gold');
 const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
 
+// Éléments Panier de dés
+const diceTray = document.getElementById('dice-tray');
+const emptyTrayMsg = document.getElementById('empty-tray-msg');
+const btnRollTray = document.getElementById('btn-roll-tray');
+const btnClearTray = document.getElementById('btn-clear-tray');
+
 // --- État Local ---
 let characterClaimed = false;
+let diceBasket = []; // Stocke les dés à plat : ['d6', 'd6', 'd20']
 
 // --- Fonctions ---
 
@@ -47,13 +54,59 @@ const sendStatsUpdate = debounce(() => {
     }
 });
 
-// Envoie la demande de lancer de dé au serveur
-function rollDice(sides) {
-    if (characterClaimed) {
-        socket.emit('rollDice', { dice: `d${sides}` });
+// --- Gestion du Panier de Dés ---
+
+function updateDiceTrayUI() {
+    diceTray.innerHTML = '';
+    
+    if (diceBasket.length === 0) {
+        diceTray.appendChild(emptyTrayMsg);
+        emptyTrayMsg.style.display = 'inline';
+        btnRollTray.disabled = true;
+        btnRollTray.classList.add('opacity-50', 'cursor-not-allowed');
     } else {
-        alert("Veuillez d'abord choisir un nom de personnage.");
+        emptyTrayMsg.style.display = 'none';
+        btnRollTray.disabled = false;
+        btnRollTray.classList.remove('opacity-50', 'cursor-not-allowed');
+
+        diceBasket.forEach((die, index) => {
+            const badge = document.createElement('span');
+            badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mr-2 mb-2 cursor-pointer hover:bg-red-100 hover:text-red-800';
+            badge.innerText = die;
+            badge.title = "Cliquer pour retirer";
+            badge.addEventListener('click', () => {
+                diceBasket.splice(index, 1);
+                updateDiceTrayUI();
+            });
+            diceTray.appendChild(badge);
+        });
     }
+}
+
+// Envoie la demande de lancer de dé au serveur
+function rollDiceBasket() {
+    if (!characterClaimed) {
+        alert("Veuillez d'abord choisir un nom de personnage.");
+        return;
+    }
+    if (diceBasket.length === 0) return;
+
+    // Agrégation des dés : ['d6', 'd6', 'd20'] -> [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
+    const diceCounts = {};
+    diceBasket.forEach(die => {
+        diceCounts[die] = (diceCounts[die] || 0) + 1;
+    });
+
+    const dicePayload = Object.keys(diceCounts).map(type => ({
+        type: type,
+        qty: diceCounts[type]
+    }));
+
+    socket.emit('rollDice', { dice: dicePayload });
+    
+    // Vider le panier après envoi
+    diceBasket = [];
+    updateDiceTrayUI();
 }
 
 // --- Écouteurs d'événements ---
@@ -71,12 +124,21 @@ allInputs.forEach(input => {
     input.addEventListener('input', sendStatsUpdate);
 });
 
-// Boutons de dés
+// Boutons de dés (Ajout au panier)
 diceButtons.forEach(button => {
     button.addEventListener('click', () => {
         const sides = button.dataset.dice;
-        rollDice(sides);
+        diceBasket.push(`d${sides}`);
+        updateDiceTrayUI();
     });
+});
+
+// Boutons du panier
+btnRollTray.addEventListener('click', rollDiceBasket);
+
+btnClearTray.addEventListener('click', () => {
+    diceBasket = [];
+    updateDiceTrayUI();
 });
 
 // --- Réception des événements du Serveur ---

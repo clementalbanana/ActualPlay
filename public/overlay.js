@@ -44,7 +44,6 @@ function updatePlayerCard(player) {
     card.querySelector('.hp-bar').style.width = `${hpPercentage}%`;
     card.querySelector('.hp-text').innerText = `${player.hp} / ${player.maxHp}`;
     
-    // Mise à jour ciblée avec les nouvelles classes
     const armorEl = card.querySelector('.armor-value');
     if (armorEl) armorEl.innerText = player.armor;
     
@@ -65,33 +64,53 @@ function updateBoss(bossData) {
     bossHpBar.style.width = `${hpPercentage}%`;
     bossHpText.innerText = `${bossData.hp} / ${bossData.maxHp}`;
 
-    // Animation de mort si PV <= 0
     if (bossData.hp <= 0) {
         if (!bossContainer.classList.contains('boss-dead')) {
             bossContainer.classList.add('boss-dead');
         }
     } else {
-        // Réinitialiser si le boss est soigné ou changé
         bossContainer.classList.remove('boss-dead');
     }
 }
 
 
-// --- Gestion des Lancers de Dés ---
+// --- Gestion des Lancers de Dés (2D) ---
 
-function showDiceRoll(data) {
+function showDiceResult(data) {
+    // Création de la notification complète
     const notification = document.createElement('div');
     notification.className = 'dice-notification';
+    
+    // Construction du contenu HTML
+    let detailsHtml = '';
+    if (data.results && data.results.length > 0) {
+        // Grouper les résultats par type de dé
+        const groups = {};
+        data.results.forEach(r => {
+            if (!groups[r.type]) groups[r.type] = [];
+            groups[r.type].push(r.value);
+        });
+
+        // Construire la chaîne HTML des détails
+        detailsHtml = Object.keys(groups).map(type => {
+            const values = groups[type].join(', ');
+            return `<span class="dice-group ${type}">[${values}]</span>`;
+        }).join(' + ');
+    }
+
     notification.innerHTML = `
-        <div class="player-name">${data.player} lance un ${data.dice}</div>
-        <div class="dice-result">${data.result}</div>
+        <div class="player-name">${data.player}</div>
+        <div class="dice-total-score">${data.total}</div>
+        <div class="dice-details">${detailsHtml}</div>
     `;
+
+    // Ajout au conteneur
     diceRollDisplay.appendChild(notification);
 
-    // La notification se détruit d'elle-même après l'animation
+    // Suppression automatique après 5 secondes
     setTimeout(() => {
         notification.remove();
-    }, 5000); // 5 secondes, comme la durée de l'animation CSS
+    }, 5000);
 }
 
 
@@ -102,19 +121,17 @@ function showImage(imageUrl) {
         projectedImage.src = imageUrl;
         projectedImage.classList.add('visible');
     } else {
-        // Si l'URL est vide, on cache l'image
         projectedImage.classList.remove('visible');
     }
 }
 
 function hideImage() {
     projectedImage.classList.remove('visible');
-    // On attend la fin de la transition pour vider la source (optionnel mais propre)
     setTimeout(() => {
         if (!projectedImage.classList.contains('visible')) {
             projectedImage.src = "";
         }
-    }, 700); // Correspond à la durée de transition CSS (0.7s)
+    }, 700);
 }
 
 
@@ -147,7 +164,7 @@ socket.on('gameStateUpdate', (gameState) => {
 });
 
 socket.on('diceRolled', (data) => {
-    showDiceRoll(data);
+    showDiceResult(data);
 });
 
 socket.on('showImage', (imageUrl) => {
@@ -159,5 +176,5 @@ socket.on('hideImage', () => {
 });
 
 socket.on('diceCleared', () => {
-    // On pourrait ajouter une animation de "nettoyage" ici si on voulait
+    diceRollDisplay.innerHTML = '';
 });

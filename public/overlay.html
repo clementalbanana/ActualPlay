@@ -10,7 +10,7 @@
 </head>
 <body>
 
-    <!-- Zone Boss (Nouveau) -->
+    <!-- Zone Boss -->
     <div id="boss-container">
         <div class="boss-header">
             <h2 id="boss-name">Nom du Boss</h2>
@@ -29,15 +29,11 @@
         <img id="projected-image" src="" alt="Image projetée">
     </div>
 
-    <!-- Zone pour les notifications de lancers de dés -->
-    <div id="dice-roll-display">
-        <!-- Les notifications de dés apparaîtront ici -->
-    </div>
+    <!-- Zone pour les notifications de lancers de dés (Nom du joueur + Résultat) -->
+    <div id="dice-roll-display"></div>
 
     <!-- Conteneur pour les fiches des joueurs -->
-    <div id="player-container">
-        <!-- Les fiches de joueurs seront générées par JS ici -->
-    </div>
+    <div id="player-container"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="overlay.js"></script>
