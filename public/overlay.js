@@ -4,6 +4,13 @@ const playerContainer = document.getElementById('player-container');
 const diceRollDisplay = document.getElementById('dice-roll-display');
 const projectedImage = document.getElementById('projected-image');
 
+// Éléments du Boss
+const bossContainer = document.getElementById('boss-container');
+const bossNameEl = document.getElementById('boss-name');
+const bossArmorEl = document.getElementById('boss-armor');
+const bossHpBar = document.getElementById('boss-hp-bar');
+const bossHpText = document.getElementById('boss-hp-text');
+
 // --- Gestion des Joueurs ---
 
 function createPlayerCard(player) {
@@ -43,6 +50,30 @@ function updatePlayerCard(player) {
     
     const goldEl = card.querySelector('.gold-value');
     if (goldEl) goldEl.innerText = player.gold;
+}
+
+
+// --- Gestion du Boss ---
+
+function updateBoss(bossData) {
+    if (!bossData) return;
+
+    bossNameEl.innerText = bossData.name;
+    bossArmorEl.innerText = bossData.armor;
+
+    const hpPercentage = Math.max(0, Math.min(100, (bossData.hp / bossData.maxHp) * 100));
+    bossHpBar.style.width = `${hpPercentage}%`;
+    bossHpText.innerText = `${bossData.hp} / ${bossData.maxHp}`;
+
+    // Animation de mort si PV <= 0
+    if (bossData.hp <= 0) {
+        if (!bossContainer.classList.contains('boss-dead')) {
+            bossContainer.classList.add('boss-dead');
+        }
+    } else {
+        // Réinitialiser si le boss est soigné ou changé
+        bossContainer.classList.remove('boss-dead');
+    }
 }
 
 
@@ -109,8 +140,10 @@ socket.on('gameStateUpdate', (gameState) => {
         }
     });
 
-    // Mettre à jour le boss (si vous voulez l'afficher aussi)
-    // Pour l'instant, on ne fait rien avec les données du boss dans l'overlay.
+    // Mettre à jour le boss
+    if (gameState.boss) {
+        updateBoss(gameState.boss);
+    }
 });
 
 socket.on('diceRolled', (data) => {
