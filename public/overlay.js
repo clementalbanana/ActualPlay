@@ -4,14 +4,40 @@ const playerContainer = document.getElementById('player-container');
 const diceRollDisplay = document.getElementById('dice-roll-display');
 const projectedImage = document.getElementById('projected-image');
 
+// Éléments du Boss
+const bossContainer = document.getElementById('boss-container');
+const bossNameEl = document.getElementById('boss-name');
+const bossArmorEl = document.getElementById('boss-armor');
+const bossHpBar = document.getElementById('boss-hp-bar');
+const bossHpText = document.getElementById('boss-hp-text');
+
 // --- Gestion des Joueurs ---
 
 function createPlayerCard(player) {
     const card = document.createElement('div');
     card.className = 'player-card';
     card.id = `player-${player.id}`;
+    
+    // Le contenu sera rempli par updatePlayerCard
+    return card;
+}
+
+function updatePlayerCard(player) {
+    let card = document.getElementById(`player-${player.id}`);
+    if (!card) {
+        card = createPlayerCard(player);
+        playerContainer.appendChild(card);
+    }
 
     const hpPercentage = (player.hp / player.maxHp) * 100;
+
+    // Génération dynamique des stats personnalisées
+    let customStatsHtml = '';
+    if (player.customStats && player.customStats.length > 0) {
+        customStatsHtml = player.customStats.map(stat => `
+            <span class="stat">${stat.name}: <span class="stat-value">${stat.value}</span></span>
+        `).join('');
+    }
 
     card.innerHTML = `
         <h3>${player.name}</h3>
@@ -22,45 +48,71 @@ function createPlayerCard(player) {
         <div class="player-stats">
             <span class="stat">Armure: <span class="stat-value armor-value">${player.armor}</span></span>
             <span class="stat">Or: <span class="stat-value gold-value">${player.gold}</span></span>
+            ${customStatsHtml}
         </div>
     `;
-    return card;
-}
-
-function updatePlayerCard(player) {
-    const card = document.getElementById(`player-${player.id}`);
-    if (!card) return;
-
-    const hpPercentage = (player.hp / player.maxHp) * 100;
-
-    card.querySelector('h3').innerText = player.name;
-    card.querySelector('.hp-bar').style.width = `${hpPercentage}%`;
-    card.querySelector('.hp-text').innerText = `${player.hp} / ${player.maxHp}`;
-    
-    // Mise à jour ciblée avec les nouvelles classes
-    const armorEl = card.querySelector('.armor-value');
-    if (armorEl) armorEl.innerText = player.armor;
-    
-    const goldEl = card.querySelector('.gold-value');
-    if (goldEl) goldEl.innerText = player.gold;
 }
 
 
-// --- Gestion des Lancers de Dés ---
+// --- Gestion du Boss ---
 
-function showDiceRoll(data) {
+function updateBoss(bossData) {
+    if (!bossData) return;
+
+    bossNameEl.innerText = bossData.name;
+    bossArmorEl.innerText = bossData.armor;
+
+    const hpPercentage = Math.max(0, Math.min(100, (bossData.hp / bossData.maxHp) * 100));
+    bossHpBar.style.width = `${hpPercentage}%`;
+    bossHpText.innerText = `${bossData.hp} / ${bossData.maxHp}`;
+
+    if (bossData.hp <= 0) {
+        if (!bossContainer.classList.contains('boss-dead')) {
+            bossContainer.classList.add('boss-dead');
+        }
+    } else {
+        bossContainer.classList.remove('boss-dead');
+    }
+}
+
+
+// --- Gestion des Lancers de Dés (2D) ---
+
+function showDiceResult(data) {
+    // Création de la notification complète
     const notification = document.createElement('div');
     notification.className = 'dice-notification';
+    
+    // Construction du contenu HTML
+    let detailsHtml = '';
+    if (data.results && data.results.length > 0) {
+        // Grouper les résultats par type de dé
+        const groups = {};
+        data.results.forEach(r => {
+            if (!groups[r.type]) groups[r.type] = [];
+            groups[r.type].push(r.value);
+        });
+
+        // Construire la chaîne HTML des détails
+        detailsHtml = Object.keys(groups).map(type => {
+            const values = groups[type].join(', ');
+            return `<span class="dice-group ${type}">[${values}]</span>`;
+        }).join(' + ');
+    }
+
     notification.innerHTML = `
-        <div class="player-name">${data.player} lance un ${data.dice}</div>
-        <div class="dice-result">${data.result}</div>
+        <div class="player-name">${data.player}</div>
+        <div class="dice-total-score">${data.total}</div>
+        <div class="dice-details">${detailsHtml}</div>
     `;
+
+    // Ajout au conteneur
     diceRollDisplay.appendChild(notification);
 
-    // La notification se détruit d'elle-même après l'animation
+    // Suppression automatique après 5 secondes
     setTimeout(() => {
         notification.remove();
-    }, 5000); // 5 secondes, comme la durée de l'animation CSS
+    }, 5000);
 }
 
 
@@ -71,19 +123,17 @@ function showImage(imageUrl) {
         projectedImage.src = imageUrl;
         projectedImage.classList.add('visible');
     } else {
-        // Si l'URL est vide, on cache l'image
         projectedImage.classList.remove('visible');
     }
 }
 
 function hideImage() {
     projectedImage.classList.remove('visible');
-    // On attend la fin de la transition pour vider la source (optionnel mais propre)
     setTimeout(() => {
         if (!projectedImage.classList.contains('visible')) {
             projectedImage.src = "";
         }
-    }, 700); // Correspond à la durée de transition CSS (0.7s)
+    }, 700);
 }
 
 
@@ -92,13 +142,7 @@ function hideImage() {
 socket.on('gameStateUpdate', (gameState) => {
     // Mettre à jour les joueurs
     gameState.players.forEach(player => {
-        const existingCard = document.getElementById(`player-${player.id}`);
-        if (existingCard) {
-            updatePlayerCard(player);
-        } else {
-            const newCard = createPlayerCard(player);
-            playerContainer.appendChild(newCard);
-        }
+        updatePlayerCard(player);
     });
 
     // Supprimer les joueurs qui ne sont plus dans le gameState
@@ -109,12 +153,14 @@ socket.on('gameStateUpdate', (gameState) => {
         }
     });
 
-    // Mettre à jour le boss (si vous voulez l'afficher aussi)
-    // Pour l'instant, on ne fait rien avec les données du boss dans l'overlay.
+    // Mettre à jour le boss
+    if (gameState.boss) {
+        updateBoss(gameState.boss);
+    }
 });
 
 socket.on('diceRolled', (data) => {
-    showDiceRoll(data);
+    showDiceResult(data);
 });
 
 socket.on('showImage', (imageUrl) => {
@@ -126,5 +172,5 @@ socket.on('hideImage', () => {
 });
 
 socket.on('diceCleared', () => {
-    // On pourrait ajouter une animation de "nettoyage" ici si on voulait
+    diceRollDisplay.innerHTML = '';
 });

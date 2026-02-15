@@ -44,6 +44,20 @@
                     <label for="gm_roller_name" class="block text-sm font-medium text-gray-400">Nom du Lanceur</label>
                     <input type="text" id="gm_roller_name" value="MJ" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
+
+                <!-- Panier de dés -->
+                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mt-4">
+                    <h3 class="text-sm font-medium text-gray-400 mb-2">Panier de dés :</h3>
+                    <div id="dice-tray" class="flex flex-wrap gap-2 min-h-[40px] items-center">
+                        <span class="text-gray-500 italic text-sm" id="empty-tray-msg">Aucun dé sélectionné</span>
+                        <!-- Les dés ajoutés apparaîtront ici -->
+                    </div>
+                    <div class="mt-4 flex space-x-2">
+                        <button id="btn-roll-tray" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">LANCER TOUT</button>
+                        <button id="btn-clear-tray" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Vider</button>
+                    </div>
+                </div>
+
                 <div id="gm-dice-buttons" class="grid grid-cols-3 md:grid-cols-7 gap-4">
                     <button data-dice="4" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d4</button>
                     <button data-dice="6" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d6</button>
