@@ -31,12 +31,23 @@ function updatePlayerCard(player) {
 
     const hpPercentage = (player.hp / player.maxHp) * 100;
 
-    // Génération dynamique des stats personnalisées
+    // Génération dynamique des stats personnalisées sous forme de barres
     let customStatsHtml = '';
     if (player.customStats && player.customStats.length > 0) {
-        customStatsHtml = player.customStats.map(stat => `
-            <span class="stat">${stat.name}: <span class="stat-value">${stat.value}</span></span>
-        `).join('');
+        customStatsHtml = player.customStats.map(stat => {
+            // Calcul du pourcentage, sécurisé entre 0 et 100
+            const statPercentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
+            
+            return `
+            <div class="custom-stat-container">
+                <div class="custom-stat-label">${stat.name}</div>
+                <div class="custom-stat-bar-bg">
+                    <div class="custom-stat-bar-fill" style="width: ${statPercentage}%;"></div>
+                    <span class="custom-stat-text">${stat.current} / ${stat.max}</span>
+                </div>
+            </div>
+            `;
+        }).join('');
     }
 
     card.innerHTML = `
@@ -45,9 +56,13 @@ function updatePlayerCard(player) {
             <div class="hp-bar" style="width: ${hpPercentage}%;"></div>
             <span class="hp-text">${player.hp} / ${player.maxHp}</span>
         </div>
-        <div class="player-stats">
+        
+        <div class="player-stats-row">
             <span class="stat">Armure: <span class="stat-value armor-value">${player.armor}</span></span>
             <span class="stat">Or: <span class="stat-value gold-value">${player.gold}</span></span>
+        </div>
+
+        <div class="custom-stats-section">
             ${customStatsHtml}
         </div>
     `;

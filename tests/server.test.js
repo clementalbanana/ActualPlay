@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { io as Client } from 'socket.io-client';
-import { server } from '../server';
+const { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } = require('vitest');
+const { io: Client } = require('socket.io-client');
+const { server } = require('../server'); // Assurez-vous que le chemin est correct
 
 describe('Server Tests', () => {
   let clientSocket;
@@ -73,6 +73,43 @@ describe('Server Tests', () => {
       });
 
       // Claim le personnage
+      clientSocket.emit('claimCharacter', charName);
+    });
+  });
+
+  it('should handle custom stats correctly', () => {
+    return new Promise((resolve) => {
+      const charName = 'CustomStatsPlayer';
+      const customStatsData = [
+        { name: 'Mana', current: 10, max: 20 },
+        { name: 'Stamina', current: 5, max: 10 }
+      ];
+
+      clientSocket.on('gameStateUpdate', (gameState) => {
+        const player = gameState.players.find(p => p.name === charName);
+        
+        if (player && player.customStats && player.customStats.length === 2) {
+          expect(player.customStats[0].name).toBe('Mana');
+          expect(player.customStats[0].current).toBe(10);
+          expect(player.customStats[0].max).toBe(20);
+          expect(player.customStats[1].name).toBe('Stamina');
+          expect(player.customStats[1].current).toBe(5);
+          expect(player.customStats[1].max).toBe(10);
+          resolve();
+        }
+      });
+
+      clientSocket.on('claimSuccess', () => {
+        const updateData = {
+          hp_current: 10,
+          hp_max: 10,
+          armor: 10,
+          gold: 0,
+          customStats: customStatsData
+        };
+        clientSocket.emit('updateStats', updateData);
+      });
+
       clientSocket.emit('claimCharacter', charName);
     });
   });
