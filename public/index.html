@@ -43,8 +43,14 @@
             <!-- Formulaire d'ajout (caché par défaut) -->
             <div id="add-stat-form" class="hidden mt-4 bg-gray-800 p-4 rounded border border-gray-700">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white">
-                    <input type="number" id="new-stat-max" placeholder="Valeur Max (ex: 20)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white">
+                    <div>
+                        <label for="new-stat-name" class="sr-only">Nom de la statistique</label>
+                        <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white w-full">
+                    </div>
+                    <div>
+                        <label for="new-stat-max" class="sr-only">Valeur Maximum</label>
+                        <input type="number" id="new-stat-max" placeholder="Valeur Max (ex: 20)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white w-full">
+                    </div>
                 </div>
                 <div class="mt-2 flex justify-end space-x-2">
                     <button id="btn-cancel-stat" class="text-gray-400 hover:text-white text-xs">Annuler</button>
