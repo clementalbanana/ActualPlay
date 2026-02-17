@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io(window.location.origin);
 
 const playerContainer = document.getElementById('player-container');
 const diceRollDisplay = document.getElementById('dice-roll-display');

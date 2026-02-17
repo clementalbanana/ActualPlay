@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io(window.location.origin);
 
 // --- Éléments du DOM ---
 const nameInput = document.getElementById('name');
