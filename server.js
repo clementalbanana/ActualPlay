@@ -220,9 +220,14 @@ io.on('connection', (socket) => {
 
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Serveur JdR lancé sur http://localhost:${PORT}`);
-    console.log(`Interface Joueur: http://localhost:${PORT}/`);
-    console.log(`Interface MJ: http://localhost:${PORT}/gm.html`);
-    console.log(`Overlay: http://localhost:${PORT}/overlay.html`);
-});
+
+if (require.main === module) {
+    server.listen(PORT, () => {
+        console.log(`Serveur JdR lancé sur http://localhost:${PORT}`);
+        console.log(`Interface Joueur: http://localhost:${PORT}/`);
+        console.log(`Interface MJ: http://localhost:${PORT}/gm.html`);
+        console.log(`Overlay: http://localhost:${PORT}/overlay.html`);
+    });
+}
+
+module.exports = { app, server, io };

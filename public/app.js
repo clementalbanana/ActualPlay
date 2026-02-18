@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io(window.location.origin);
 
 // --- Éléments du DOM ---
 const nameInput = document.getElementById('name');
@@ -21,13 +21,13 @@ const addStatForm = document.getElementById('add-stat-form');
 const btnCancelStat = document.getElementById('btn-cancel-stat');
 const btnConfirmStat = document.getElementById('btn-confirm-stat');
 const newStatName = document.getElementById('new-stat-name');
-const newStatValue = document.getElementById('new-stat-value');
+const newStatMax = document.getElementById('new-stat-max');
 const customStatsList = document.getElementById('custom-stats-list');
 
 // --- État Local ---
 let characterClaimed = false;
 let diceBasket = []; // Stocke les dés à plat : ['d6', 'd6', 'd20']
-let customStats = []; // [{ name: 'Mana', value: '10/20' }]
+let customStats = []; // [{ name: 'Mana', current: 10, max: 20 }]
 
 // --- Fonctions ---
 
@@ -75,43 +75,61 @@ const sendStatsUpdate = debounce(() => {
 function renderCustomStats() {
     customStatsList.innerHTML = '';
     customStats.forEach((stat, index) => {
+        const percentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
+        
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between bg-gray-700 p-2 rounded';
+        div.className = 'bg-gray-700 p-3 rounded border border-gray-600';
         
         div.innerHTML = `
-            <div class="flex-1 grid grid-cols-2 gap-2 mr-2">
-                <input type="text" value="${stat.name}" class="bg-gray-600 border-none rounded px-2 py-1 text-sm text-white focus:ring-1 focus:ring-indigo-500 stat-name-input" data-index="${index}">
-                <input type="text" value="${stat.value}" class="bg-gray-600 border-none rounded px-2 py-1 text-sm text-white focus:ring-1 focus:ring-indigo-500 stat-value-input" data-index="${index}">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-300">${stat.name}</span>
+                <button class="text-red-400 hover:text-red-600 p-1 delete-stat-btn" data-index="${index}" title="Supprimer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </button>
             </div>
-            <button class="text-red-400 hover:text-red-600 p-1 delete-stat-btn" data-index="${index}" title="Supprimer">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-            </button>
+            
+            <div class="relative w-full h-5 bg-gray-900 rounded-full overflow-hidden border border-gray-600 mb-2">
+                <div class="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-300 ease-out" style="width: ${percentage}%"></div>
+                <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold text-white drop-shadow-md z-10">
+                    ${stat.current} / ${stat.max}
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4">
+                <button class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-xs btn-decrease" data-index="${index}">-</button>
+                <button class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-xs btn-increase" data-index="${index}">+</button>
+            </div>
         `;
         customStatsList.appendChild(div);
     });
 
-    // Ajout des écouteurs pour la modification en direct
-    document.querySelectorAll('.stat-name-input').forEach(input => {
-        input.addEventListener('input', (e) => {
+    // Écouteurs pour les boutons +/- et suppression
+    document.querySelectorAll('.btn-decrease').forEach(btn => {
+        btn.addEventListener('click', (e) => {
             const idx = e.target.dataset.index;
-            customStats[idx].name = e.target.value;
-            sendStatsUpdate();
+            if (customStats[idx].current > 0) {
+                customStats[idx].current--;
+                renderCustomStats();
+                sendStatsUpdate();
+            }
         });
     });
 
-    document.querySelectorAll('.stat-value-input').forEach(input => {
-        input.addEventListener('input', (e) => {
+    document.querySelectorAll('.btn-increase').forEach(btn => {
+        btn.addEventListener('click', (e) => {
             const idx = e.target.dataset.index;
-            customStats[idx].value = e.target.value;
-            sendStatsUpdate();
+            if (customStats[idx].current < customStats[idx].max) {
+                customStats[idx].current++;
+                renderCustomStats();
+                sendStatsUpdate();
+            }
         });
     });
 
     document.querySelectorAll('.delete-stat-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Remonter jusqu'au bouton si le clic est sur l'icône SVG
             const target = e.target.closest('button');
             const idx = target.dataset.index;
             customStats.splice(idx, 1);
@@ -129,24 +147,28 @@ btnAddStat.addEventListener('click', () => {
 btnCancelStat.addEventListener('click', () => {
     addStatForm.classList.add('hidden');
     newStatName.value = '';
-    newStatValue.value = '';
+    newStatMax.value = '';
 });
 
 btnConfirmStat.addEventListener('click', () => {
     const name = newStatName.value.trim();
-    const value = newStatValue.value.trim();
+    const maxVal = parseInt(newStatMax.value.trim(), 10);
     
-    if (name && value) {
-        customStats.push({ name, value });
+    if (name && !isNaN(maxVal) && maxVal > 0) {
+        customStats.push({ 
+            name: name, 
+            current: maxVal, // Commence au max par défaut
+            max: maxVal 
+        });
         renderCustomStats();
         sendStatsUpdate();
         
         // Reset form
         newStatName.value = '';
-        newStatValue.value = '';
+        newStatMax.value = '';
         addStatForm.classList.add('hidden');
     } else {
-        alert("Veuillez remplir le nom et la valeur.");
+        alert("Veuillez entrer un nom valide et une valeur maximum numérique.");
     }
 });
 
