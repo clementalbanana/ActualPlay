@@ -121,32 +121,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on('rollDice', (data) => {
-        // data.dice peut être :
-        // 1. Une chaîne "d20" (ancien format)
-        // 2. Un tableau d'objets [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
+        // data.dice: [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
+        // data.modifier: number (ex: 4, -2)
         
         let diceToRoll = [];
-        
+        let constantModifier = parseInt(data.modifier, 10) || 0;
+
         if (Array.isArray(data.dice)) {
-            // Format [{type: 'd6', qty: 2}]
             data.dice.forEach(item => {
                 if (item.type && item.qty) {
                     for (let i = 0; i < item.qty; i++) {
                         diceToRoll.push(item.type);
                     }
                 } else if (typeof item === 'string') {
-                    // Cas où on recevrait ['d6', 'd6'] directement
                     diceToRoll.push(item);
                 }
             });
         } else if (typeof data.dice === 'string') {
             diceToRoll = [data.dice];
         } else {
-            return; // Format invalide
+            return;
         }
 
         let results = [];
-        let total = 0;
+        let total = constantModifier;
 
         diceToRoll.forEach(dieType => {
             const sides = parseInt(dieType.replace('d', ''), 10);
@@ -158,20 +156,17 @@ io.on('connection', (socket) => {
         });
 
         let rollerName = "Anonyme";
-
-        // Si le lancer vient d'un joueur authentifié
         const player = getPlayerBySocketId(socket.id);
         if (player) {
             rollerName = player.name;
-        }
-        // Si le lancer vient du MJ (qui peut spécifier un nom)
-        else if (data.player) {
+        } else if (data.player) {
             rollerName = data.player;
         }
 
         const diceData = { 
             player: rollerName, 
-            results: results, // [{type: 'd6', value: 4}, {type: 'd20', value: 15}]
+            results: results,
+            modifier: constantModifier,
             total: total 
         };
         

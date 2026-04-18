@@ -8,6 +8,7 @@ const armorInput = document.getElementById('armor');
 const goldInput = document.getElementById('gold');
 const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
+const modButtons = document.querySelectorAll('.mod-btn');
 
 // Éléments Panier de dés
 const diceTray = document.getElementById('dice-tray');
@@ -26,7 +27,7 @@ const customStatsList = document.getElementById('custom-stats-list');
 
 // --- État Local ---
 let characterClaimed = false;
-let diceBasket = []; // Stocke les dés à plat : ['d6', 'd6', 'd20']
+let diceBasket = []; // Stocke les éléments : { type: 'die', value: 'd20' } ou { type: 'mod', value: 4 }
 let customStats = []; // [{ name: 'Mana', current: 10, max: 20 }]
 
 // --- Fonctions ---
@@ -188,15 +189,25 @@ function updateDiceTrayUI() {
         btnRollTray.disabled = false;
         btnRollTray.classList.remove('opacity-50', 'cursor-not-allowed');
 
-        diceBasket.forEach((die, index) => {
+        diceBasket.forEach((item, index) => {
             const badge = document.createElement('span');
-            badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mr-2 mb-2 cursor-pointer hover:bg-red-100 hover:text-red-800';
-            badge.innerText = die;
-            badge.title = "Cliquer pour retirer";
-            badge.addEventListener('click', () => {
+            const isMod = item.type === 'mod';
+            const bgColor = isMod ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800';
+            badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} mr-2 mb-2 group`;
+
+            const text = document.createElement('span');
+            text.innerText = isMod ? (item.value >= 0 ? `+${item.value}` : item.value) : item.value;
+            badge.appendChild(text);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&nbsp;x';
+            removeBtn.className = 'ml-1 hover:text-red-600 font-bold';
+            removeBtn.addEventListener('click', () => {
                 diceBasket.splice(index, 1);
                 updateDiceTrayUI();
             });
+            badge.appendChild(removeBtn);
+
             diceTray.appendChild(badge);
         });
     }
@@ -210,18 +221,24 @@ function rollDiceBasket() {
     }
     if (diceBasket.length === 0) return;
 
-    // Agrégation des dés : ['d6', 'd6', 'd20'] -> [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
+    // Agrégation
+    const dicePayload = [];
+    let constantModifier = 0;
+
     const diceCounts = {};
-    diceBasket.forEach(die => {
-        diceCounts[die] = (diceCounts[die] || 0) + 1;
+    diceBasket.forEach(item => {
+        if (item.type === 'die') {
+            diceCounts[item.value] = (diceCounts[item.value] || 0) + 1;
+        } else if (item.type === 'mod') {
+            constantModifier += item.value;
+        }
     });
 
-    const dicePayload = Object.keys(diceCounts).map(type => ({
-        type: type,
-        qty: diceCounts[type]
-    }));
+    Object.keys(diceCounts).forEach(type => {
+        dicePayload.push({ type, qty: diceCounts[type] });
+    });
 
-    socket.emit('rollDice', { dice: dicePayload });
+    socket.emit('rollDice', { dice: dicePayload, modifier: constantModifier });
     
     // Vider le panier après envoi
     diceBasket = [];
@@ -247,7 +264,16 @@ allInputs.forEach(input => {
 diceButtons.forEach(button => {
     button.addEventListener('click', () => {
         const sides = button.dataset.dice;
-        diceBasket.push(`d${sides}`);
+        diceBasket.push({ type: 'die', value: `d${sides}` });
+        updateDiceTrayUI();
+    });
+});
+
+// Boutons de modificateurs
+modButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const mod = parseInt(button.dataset.mod, 10);
+        diceBasket.push({ type: 'mod', value: mod });
         updateDiceTrayUI();
     });
 });

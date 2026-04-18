@@ -80,14 +80,33 @@
                 </div>
             </div>
 
-            <div id="dice-buttons" class="mt-4 grid grid-cols-3 md:grid-cols-7 gap-4">
-                <button data-dice="4" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d4</button>
-                <button data-dice="6" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d6</button>
-                <button data-dice="8" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d8</button>
-                <button data-dice="10" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d10</button>
-                <button data-dice="12" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d12</button>
-                <button data-dice="20" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d20</button>
-                <button data-dice="100" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d100</button>
+            <div class="mt-4 space-y-4">
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-400">Dés :</p>
+                    <div id="dice-buttons" class="grid grid-cols-4 md:grid-cols-7 gap-2">
+                        <button data-dice="4" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d4</button>
+                        <button data-dice="6" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d6</button>
+                        <button data-dice="8" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d8</button>
+                        <button data-dice="10" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d10</button>
+                        <button data-dice="12" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d12</button>
+                        <button data-dice="20" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d20</button>
+                        <button data-dice="100" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded text-sm">d100</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-400">Modificateurs :</p>
+                    <div class="grid grid-cols-4 md:grid-cols-8 gap-2">
+                        <button data-mod="1" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">+1</button>
+                        <button data-mod="-1" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">-1</button>
+                        <button data-mod="2" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">+2</button>
+                        <button data-mod="-2" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">-2</button>
+                        <button data-mod="5" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">+5</button>
+                        <button data-mod="-5" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">-5</button>
+                        <button data-mod="10" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">+10</button>
+                        <button data-mod="-10" class="mod-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-2 rounded text-sm">-10</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

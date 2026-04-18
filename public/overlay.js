@@ -113,6 +113,10 @@ function showDiceResult(data) {
             const values = groups[type].join(', ');
             return `<span class="dice-group ${type}">[${values}]</span>`;
         }).join(' + ');
+
+        if (data.modifier && data.modifier !== 0) {
+            detailsHtml += ` <span class="dice-modifier">${data.modifier > 0 ? '+' : ''}${data.modifier}</span>`;
+        }
     }
 
     notification.innerHTML = `
