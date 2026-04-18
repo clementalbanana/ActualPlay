@@ -11,11 +11,21 @@ const diceButtons = document.querySelectorAll('.dice-btn');
 const modButtons = document.querySelectorAll('.mod-btn');
 const diceLog = document.getElementById('dice-log');
 
-// Éléments Panier de dés
-const diceTray = document.getElementById('dice-tray');
-const emptyTrayMsg = document.getElementById('empty-tray-msg');
-const btnRollTray = document.getElementById('btn-roll-tray');
-const btnClearTray = document.getElementById('btn-clear-tray');
+// Éléments Panier de dés (Unified logic for multiple UI targets)
+const trayContainers = {
+    mobile: {
+        list: document.getElementById('dice-tray-mobile'),
+        roll: document.getElementById('btn-roll-tray-mobile'),
+        clear: document.getElementById('btn-clear-tray-mobile'),
+        wrapper: document.getElementById('mobile-tray-container')
+    },
+    desktop: {
+        list: document.getElementById('dice-tray-desktop'),
+        roll: document.getElementById('btn-roll-tray-desktop'),
+        clear: document.getElementById('btn-clear-tray-desktop'),
+        emptyMsg: document.getElementById('empty-tray-msg-desktop')
+    }
+};
 
 // Éléments Stats Personnalisées
 const btnAddStat = document.getElementById('btn-add-stat');
@@ -31,8 +41,7 @@ let characterClaimed = false;
 let diceBasket = [];
 let customStats = [];
 
-// --- Fonctions ---
-
+// --- Fonctions Utilitaires ---
 function debounce(func, delay = 300) {
     let timeoutId;
     return (...args) => {
@@ -41,6 +50,94 @@ function debounce(func, delay = 300) {
     };
 }
 
+// --- Logique du Panier de Dés ---
+function updateDiceTrayUI() {
+    // Mobile UI
+    if (trayContainers.mobile.list) {
+        trayContainers.mobile.list.innerHTML = '';
+        if (diceBasket.length === 0) {
+            trayContainers.mobile.wrapper.classList.add('hidden');
+        } else {
+            trayContainers.mobile.wrapper.classList.remove('hidden');
+            renderItemsToTray(trayContainers.mobile.list);
+        }
+    }
+
+    // Desktop UI
+    if (trayContainers.desktop.list) {
+        trayContainers.desktop.list.innerHTML = '';
+        if (diceBasket.length === 0) {
+            trayContainers.desktop.list.appendChild(trayContainers.desktop.emptyMsg);
+            trayContainers.desktop.emptyMsg.style.display = 'inline';
+            trayContainers.desktop.roll.disabled = true;
+        } else {
+            trayContainers.desktop.emptyMsg.style.display = 'none';
+            trayContainers.desktop.roll.disabled = false;
+            renderItemsToTray(trayContainers.desktop.list);
+        }
+    }
+}
+
+function renderItemsToTray(container) {
+    diceBasket.forEach((item, index) => {
+        const badge = document.createElement('span');
+        const isMod = item.type === 'mod';
+        const colorClass = isMod ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800';
+        badge.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${colorClass} shadow-sm`;
+        badge.innerHTML = `<span>${isMod ? (item.value >= 0 ? `+${item.value}` : item.value) : item.value}</span>`;
+
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '&nbsp;×';
+        delBtn.className = 'ml-2 text-sm font-black hover:text-red-600 transition-colors';
+        delBtn.onclick = () => {
+            diceBasket.splice(index, 1);
+            updateDiceTrayUI();
+        };
+        badge.appendChild(delBtn);
+        container.appendChild(badge);
+    });
+}
+
+function rollDiceBasket() {
+    if (!characterClaimed) return alert("Veuillez choisir un nom de personnage.");
+    if (diceBasket.length === 0) return;
+
+    const dicePayload = [];
+    let constantModifier = 0;
+    const diceCounts = {};
+
+    diceBasket.forEach(item => {
+        if (item.type === 'die') diceCounts[item.value] = (diceCounts[item.value] || 0) + 1;
+        else constantModifier += item.value;
+    });
+
+    Object.keys(diceCounts).forEach(type => dicePayload.push({ type, qty: diceCounts[type] }));
+
+    socket.emit('rollDice', { dice: dicePayload, modifier: constantModifier });
+    diceBasket = [];
+    updateDiceTrayUI();
+}
+
+// --- Événements du Panier ---
+[trayContainers.mobile.roll, trayContainers.desktop.roll].forEach(btn => {
+    if(btn) btn.onclick = rollDiceBasket;
+});
+
+[trayContainers.mobile.clear, trayContainers.desktop.clear].forEach(btn => {
+    if(btn) btn.onclick = () => { diceBasket = []; updateDiceTrayUI(); };
+});
+
+diceButtons.forEach(btn => btn.onclick = () => {
+    diceBasket.push({type:'die', value:`d${btn.dataset.dice}`});
+    updateDiceTrayUI();
+});
+
+modButtons.forEach(btn => btn.onclick = () => {
+    diceBasket.push({type:'mod', value:parseInt(btn.dataset.mod, 10)});
+    updateDiceTrayUI();
+});
+
+// --- Gestion des Stats & Formulaires ---
 function updateForm(player) {
     hpCurrentInput.value = player.hp;
     hpMaxInput.value = player.maxHp;
@@ -52,20 +149,14 @@ function updateForm(player) {
     }
 }
 
-function getStats() {
-    return {
+const sendStatsUpdate = debounce(() => {
+    if (characterClaimed) socket.emit('updateStats', {
         hp_current: hpCurrentInput.value,
         hp_max: hpMaxInput.value,
         armor: armorInput.value,
         gold: goldInput.value,
         customStats: customStats
-    };
-}
-
-const sendStatsUpdate = debounce(() => {
-    if (characterClaimed) {
-        socket.emit('updateStats', getStats());
-    }
+    });
 });
 
 function renderCustomStats() {
@@ -73,43 +164,47 @@ function renderCustomStats() {
     customStats.forEach((stat, index) => {
         const percentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
         const div = document.createElement('div');
-        div.className = 'bg-gray-700 p-3 rounded border border-gray-600';
+        div.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
         div.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-300">${stat.name}</span>
-                <button class="text-red-400 hover:text-red-600 p-1 delete-stat-btn" data-index="${index}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-sm font-bold text-gray-200">${stat.name}</span>
+                <button class="text-red-400 p-2 active:scale-90" onclick="deleteStat(${index})">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                     </svg>
                 </button>
             </div>
-            <div class="relative w-full h-5 bg-gray-900 rounded-full overflow-hidden border border-gray-600 mb-2">
-                <div class="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-300" style="width: ${percentage}%"></div>
-                <div class="absolute w-full h-full flex items-center justify-center text-xs font-bold text-white drop-shadow-md z-10">
+            <div class="relative w-full h-6 bg-gray-900 rounded-full overflow-hidden border border-gray-600 mb-4 shadow-inner">
+                <div class="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-500 ease-out" style="width: ${percentage}%"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow-md z-10">
                     ${stat.current} / ${stat.max}
                 </div>
             </div>
-            <div class="flex justify-center space-x-4">
-                <button class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-xs btn-decrease" data-index="${index}">-</button>
-                <button class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-xs btn-increase" data-index="${index}">+</button>
+            <div class="flex justify-center space-x-8">
+                <button class="bg-gray-700 w-12 h-12 flex items-center justify-center rounded-xl text-lg font-black active:bg-gray-600 shadow-md" onclick="changeStat(${index}, -1)">-</button>
+                <button class="bg-gray-700 w-12 h-12 flex items-center justify-center rounded-xl text-lg font-black active:bg-gray-600 shadow-md" onclick="changeStat(${index}, 1)">+</button>
             </div>
         `;
         customStatsList.appendChild(div);
     });
-
-    document.querySelectorAll('.btn-decrease').forEach(btn => btn.onclick = (e) => {
-        const idx = e.target.dataset.index;
-        if (customStats[idx].current > 0) { customStats[idx].current--; renderCustomStats(); sendStatsUpdate(); }
-    });
-    document.querySelectorAll('.btn-increase').forEach(btn => btn.onclick = (e) => {
-        const idx = e.target.dataset.index;
-        if (customStats[idx].current < customStats[idx].max) { customStats[idx].current++; renderCustomStats(); sendStatsUpdate(); }
-    });
-    document.querySelectorAll('.delete-stat-btn').forEach(btn => btn.onclick = (e) => {
-        const idx = e.currentTarget.dataset.index;
-        customStats.splice(idx, 1); renderCustomStats(); sendStatsUpdate();
-    });
 }
+
+window.changeStat = (idx, delta) => {
+    const newVal = customStats[idx].current + delta;
+    if (newVal >= 0 && newVal <= customStats[idx].max) {
+        customStats[idx].current = newVal;
+        renderCustomStats();
+        sendStatsUpdate();
+    }
+};
+
+window.deleteStat = (idx) => {
+    if(confirm("Supprimer cette statistique ?")) {
+        customStats.splice(idx, 1);
+        renderCustomStats();
+        sendStatsUpdate();
+    }
+};
 
 btnAddStat.onclick = () => { addStatForm.classList.remove('hidden'); newStatName.focus(); };
 btnCancelStat.onclick = () => { addStatForm.classList.add('hidden'); newStatName.value = ''; newStatMax.value = ''; };
@@ -123,49 +218,7 @@ btnConfirmStat.onclick = () => {
     }
 };
 
-function updateDiceTrayUI() {
-    diceTray.innerHTML = '';
-    if (diceBasket.length === 0) {
-        diceTray.appendChild(emptyTrayMsg);
-        emptyTrayMsg.style.display = 'inline';
-        btnRollTray.disabled = true;
-    } else {
-        emptyTrayMsg.style.display = 'none';
-        btnRollTray.disabled = false;
-        diceBasket.forEach((item, index) => {
-            const badge = document.createElement('span');
-            const isMod = item.type === 'mod';
-            badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isMod ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'} mr-2 mb-2`;
-            badge.innerHTML = `<span>${isMod ? (item.value >= 0 ? `+${item.value}` : item.value) : item.value}</span>`;
-            const del = document.createElement('button');
-            del.innerHTML = '&nbsp;x';
-            del.className = 'ml-1 hover:text-red-600 font-bold';
-            del.onclick = () => { diceBasket.splice(index, 1); updateDiceTrayUI(); };
-            badge.appendChild(del);
-            diceTray.appendChild(badge);
-        });
-    }
-}
-
-diceButtons.forEach(btn => btn.onclick = () => { diceBasket.push({type:'die', value:`d${btn.dataset.dice}`}); updateDiceTrayUI(); });
-modButtons.forEach(btn => btn.onclick = () => { diceBasket.push({type:'mod', value:parseInt(btn.dataset.mod,10)}); updateDiceTrayUI(); });
-
-btnRollTray.onclick = () => {
-    if (!characterClaimed) return alert("Choisissez un nom.");
-    const dicePayload = [];
-    let constantModifier = 0;
-    const diceCounts = {};
-    diceBasket.forEach(item => {
-        if (item.type === 'die') diceCounts[item.value] = (diceCounts[item.value] || 0) + 1;
-        else constantModifier += item.value;
-    });
-    Object.keys(diceCounts).forEach(type => dicePayload.push({ type, qty: diceCounts[type] }));
-    socket.emit('rollDice', { dice: dicePayload, modifier: constantModifier });
-    diceBasket = []; updateDiceTrayUI();
-};
-
-btnClearTray.onclick = () => { diceBasket = []; updateDiceTrayUI(); };
-
+// --- Initialisation & Socket ---
 nameInput.onchange = () => {
     const characterName = nameInput.value.trim();
     if (characterName) socket.emit('claimCharacter', characterName);
@@ -215,15 +268,8 @@ socket.on('diceRolled', (data) => {
     if (diceLog.children.length > 50) diceLog.lastElementChild.remove();
 });
 
-socket.on('kicked', () => {
-    alert("Vous avez été expulsé par le MJ.");
-    window.location.reload();
-});
+socket.on('kicked', () => { alert("Expulsé par le MJ."); window.location.reload(); });
+socket.on('disconnect', () => { characterClaimed = false; nameInput.disabled = false; nameInput.classList.remove('bg-gray-600'); });
 
-socket.on('disconnect', () => {
-    characterClaimed = false;
-    nameInput.disabled = false;
-    nameInput.classList.remove('bg-gray-600');
-});
-
+// Initial UI sync
 updateDiceTrayUI();
