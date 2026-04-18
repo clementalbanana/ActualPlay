@@ -34,6 +34,7 @@ const btnCancelStat = document.getElementById('btn-cancel-stat');
 const btnConfirmStat = document.getElementById('btn-confirm-stat');
 const newStatName = document.getElementById('new-stat-name');
 const newStatMax = document.getElementById('new-stat-max');
+const newStatColor = document.getElementById('new-stat-color');
 const customStatsList = document.getElementById('custom-stats-list');
 
 // --- État Local ---
@@ -167,7 +168,10 @@ function renderCustomStats() {
         div.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
         div.innerHTML = `
             <div class="flex justify-between items-center mb-3">
-                <span class="text-sm font-bold text-gray-200">${stat.name}</span>
+                <div class="flex items-center gap-3">
+                    <input type="color" value="${stat.color || '#4F46E5'}" onchange="updateStatColor(${index}, this.value)">
+                    <span class="text-sm font-bold text-gray-200">${stat.name}</span>
+                </div>
                 <button class="text-red-400 p-2 active:scale-90" onclick="deleteStat(${index})">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -175,7 +179,7 @@ function renderCustomStats() {
                 </button>
             </div>
             <div class="relative w-full h-6 bg-gray-900 rounded-full overflow-hidden border border-gray-600 mb-4 shadow-inner">
-                <div class="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-500 ease-out" style="width: ${percentage}%"></div>
+                <div class="absolute top-0 left-0 h-full transition-all duration-500 ease-out" style="width: ${percentage}%; background-color: ${stat.color || '#4F46E5'}"></div>
                 <div class="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow-md z-10">
                     ${stat.current} / ${stat.max}
                 </div>
@@ -188,6 +192,12 @@ function renderCustomStats() {
         customStatsList.appendChild(div);
     });
 }
+
+window.updateStatColor = (idx, color) => {
+    customStats[idx].color = color;
+    renderCustomStats();
+    sendStatsUpdate();
+};
 
 window.changeStat = (idx, delta) => {
     const newVal = customStats[idx].current + delta;
@@ -211,8 +221,9 @@ btnCancelStat.onclick = () => { addStatForm.classList.add('hidden'); newStatName
 btnConfirmStat.onclick = () => {
     const name = newStatName.value.trim();
     const maxVal = parseInt(newStatMax.value.trim(), 10);
+    const color = newStatColor.value;
     if (name && !isNaN(maxVal) && maxVal > 0) {
-        customStats.push({ name, current: maxVal, max: maxVal });
+        customStats.push({ name, current: maxVal, max: maxVal, color: color });
         renderCustomStats(); sendStatsUpdate();
         newStatName.value = ''; newStatMax.value = ''; addStatForm.classList.add('hidden');
     }
@@ -221,7 +232,10 @@ btnConfirmStat.onclick = () => {
 // --- Initialisation & Socket ---
 nameInput.onchange = () => {
     const characterName = nameInput.value.trim();
-    if (characterName) socket.emit('claimCharacter', characterName);
+    if (characterName) {
+        socket.emit('claimCharacter', characterName);
+        localStorage.setItem('jdr_playerName', characterName);
+    }
 };
 
 allInputs.forEach(input => input.oninput = sendStatsUpdate);
@@ -271,5 +285,13 @@ socket.on('diceRolled', (data) => {
 socket.on('kicked', () => { alert("Expulsé par le MJ."); window.location.reload(); });
 socket.on('disconnect', () => { characterClaimed = false; nameInput.disabled = false; nameInput.classList.remove('bg-gray-600'); });
 
-// Initial UI sync
+// Auto-claim from localStorage
+window.addEventListener('load', () => {
+    const savedName = localStorage.getItem('jdr_playerName');
+    if (savedName) {
+        nameInput.value = savedName;
+        socket.emit('claimCharacter', savedName);
+    }
+});
+
 updateDiceTrayUI();
