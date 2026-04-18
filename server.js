@@ -186,8 +186,10 @@ io.on('connection', (socket) => {
                 targetSocket.disconnect(true);
             }
             delete claimedCharacters[socketId];
-            broadcastGameState();
         }
+        // Supprimer définitivement le joueur de l'état du jeu pour qu'il disparaisse de l'overlay
+        gameState.players = gameState.players.filter(p => p.id !== playerId);
+        broadcastGameState();
     });
 
     socket.on('displayImage', (imageUrl) => {

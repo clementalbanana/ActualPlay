@@ -282,7 +282,12 @@ socket.on('diceRolled', (data) => {
     if (diceLog.children.length > 50) diceLog.lastElementChild.remove();
 });
 
-socket.on('kicked', () => { alert("Expulsé par le MJ."); window.location.reload(); });
+socket.on('kicked', () => {
+    alert("Expulsé par le MJ.");
+    localStorage.removeItem('jdr_playerName');
+    window.location.reload();
+});
+
 socket.on('disconnect', () => { characterClaimed = false; nameInput.disabled = false; nameInput.classList.remove('bg-gray-600'); });
 
 // Auto-claim from localStorage
