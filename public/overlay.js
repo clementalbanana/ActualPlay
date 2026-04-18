@@ -37,12 +37,13 @@ function updatePlayerCard(player) {
         customStatsHtml = player.customStats.map(stat => {
             // Calcul du pourcentage, sécurisé entre 0 et 100
             const statPercentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
-            
+            const statColor = stat.color || '#4B0082'; // Indigo par défaut si non défini
+
             return `
             <div class="custom-stat-container">
                 <div class="custom-stat-label">${stat.name}</div>
                 <div class="custom-stat-bar-bg">
-                    <div class="custom-stat-bar-fill" style="width: ${statPercentage}%;"></div>
+                    <div class="custom-stat-bar-fill" style="width: ${statPercentage}%; background-color: ${statColor};"></div>
                     <span class="custom-stat-text">${stat.current} / ${stat.max}</span>
                 </div>
             </div>
@@ -113,6 +114,10 @@ function showDiceResult(data) {
             const values = groups[type].join(', ');
             return `<span class="dice-group ${type}">[${values}]</span>`;
         }).join(' + ');
+
+        if (data.modifier && data.modifier !== 0) {
+            detailsHtml += ` <span class="dice-modifier">${data.modifier > 0 ? '+' : ''}${data.modifier}</span>`;
+        }
     }
 
     notification.innerHTML = `
@@ -188,4 +193,12 @@ socket.on('hideImage', () => {
 
 socket.on('diceCleared', () => {
     diceRollDisplay.innerHTML = '';
+});
+
+socket.on('imageDisplayed', (imageUrl) => {
+    showImage(imageUrl);
+});
+
+socket.on('imageHidden', () => {
+    hideImage();
 });

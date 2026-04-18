@@ -1,96 +1,227 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Interface Joueur</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+        /* Empêcher le rebond sur iOS et assurer que le contenu remplit l'écran */
+        body { -webkit-overflow-scrolling: touch; }
+
+        /* Style pour les boutons de dés pour qu'ils soient bien carrés et tactiles */
+        .touch-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+
+        /* Style pour le sélecteur de couleur compact */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #4b5563;
+            border-radius: 8px;
+        }
+
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        .input-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+        }
+    </style>
 </head>
-<body class="bg-gray-800 text-white p-4">
+<body class="bg-gray-800 text-white font-sans h-full flex flex-col overflow-hidden">
 
-<div class="max-w-md mx-auto bg-gray-900 rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-    <div class="p-8">
-        <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Fiche de Personnage</div>
-        <div class="mt-4">
-            <label for="name" class="block text-sm font-medium text-gray-400">Nom</label>
-            <input type="text" id="name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-        </div>
-        <div class="mt-4 grid grid-cols-2 gap-4">
-            <div>
-                <label for="hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
-                <input type="number" id="hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-            <div>
-                <label for="hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
-                <input type="number" id="hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-        </div>
-        <div class="mt-4">
-            <label for="armor" class="block text-sm font-medium text-gray-400">Armure</label>
-            <input type="number" id="armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-        </div>
-        <div class="mt-4">
-            <label for="gold" class="block text-sm font-medium text-gray-400">Or</label>
-            <input type="number" id="gold" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-        </div>
-
-        <!-- Section Statistiques Personnalisées -->
-        <div class="mt-8">
-            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold flex justify-between items-center">
-                <span>Statistiques Personnalisées</span>
-                <button id="btn-add-stat" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-2 rounded">Ajouter</button>
-            </div>
+<div class="flex-grow overflow-y-auto custom-scrollbar pb-32 md:pb-8">
+    <div class="max-w-md mx-auto p-4 space-y-6 md:max-w-2xl">
+        <!-- Fiche de Personnage -->
+        <div class="bg-gray-900 rounded-xl shadow-md overflow-hidden p-6 md:p-8">
+            <div class="uppercase tracking-wide text-xs md:text-sm text-indigo-500 font-semibold mb-4">Fiche de Personnage</div>
             
-            <!-- Formulaire d'ajout (caché par défaut) -->
-            <div id="add-stat-form" class="hidden mt-4 bg-gray-800 p-4 rounded border border-gray-700">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label for="new-stat-name" class="sr-only">Nom de la statistique</label>
-                        <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white w-full">
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-xs font-medium text-gray-400">Nom</label>
+                    <input type="text" id="name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label for="hp_current" class="block text-xs font-medium text-gray-400">PV Actuels</label>
+                        <div class="flex">
+                            <button onclick="adjustValue('hp_current', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="hp_current" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('hp_current', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="new-stat-max" class="sr-only">Valeur Maximum</label>
-                        <input type="number" id="new-stat-max" placeholder="Valeur Max (ex: 20)" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white w-full">
+                    <div class="space-y-1">
+                        <label for="hp_max" class="block text-xs font-medium text-gray-400">PV Max</label>
+                        <div class="flex">
+                            <button onclick="adjustValue('hp_max', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="hp_max" min="1" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('hp_max', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-2 flex justify-end space-x-2">
-                    <button id="btn-cancel-stat" class="text-gray-400 hover:text-white text-xs">Annuler</button>
-                    <button id="btn-confirm-stat" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-3 rounded">Valider</button>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label for="armor" class="block text-xs font-medium text-gray-400">Armure</label>
+                        <div class="flex">
+                            <button onclick="adjustValue('armor', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="armor" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('armor', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label for="gold" class="block text-xs font-medium text-gray-400">Or</label>
+                        <div class="flex">
+                            <button onclick="adjustValue('gold', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="gold" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('gold', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Liste des stats -->
-            <div id="custom-stats-list" class="mt-4 space-y-4">
-                <!-- Les stats ajoutées apparaîtront ici -->
+            <!-- Section Statistiques Personnalisées -->
+            <div class="mt-8">
+                <div class="uppercase tracking-wide text-xs md:text-sm text-indigo-500 font-semibold flex justify-between items-center mb-4">
+                    <span>Stats Perso</span>
+                    <button id="btn-add-stat" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-sm">Ajouter</button>
+                </div>
+
+                <div id="add-stat-form" class="hidden mb-6 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-inner">
+                    <div class="grid grid-cols-1 gap-3">
+                        <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-base text-white w-full focus:ring-2 focus:ring-indigo-500">
+                        <div class="flex gap-3">
+                             <input type="number" id="new-stat-max" min="1" placeholder="Valeur Max" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-base text-white flex-1 focus:ring-2 focus:ring-indigo-500">
+                             <div class="flex flex-col items-center">
+                                 <label class="text-[10px] text-gray-500 font-bold mb-1 uppercase">Couleur</label>
+                                 <input type="color" id="new-stat-color" value="#4F46E5" class="rounded-lg">
+                             </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end space-x-3">
+                        <button id="btn-cancel-stat" class="text-gray-400 hover:text-white px-3 py-2 text-sm">Annuler</button>
+                        <button id="btn-confirm-stat" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg">Valider</button>
+                    </div>
+                </div>
+
+                <div id="custom-stats-list" class="space-y-4"></div>
             </div>
         </div>
 
-        <div class="mt-8">
-            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Lancer de Dés</div>
-            
-            <!-- Panier de dés -->
-            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mt-4">
-                <h3 class="text-sm font-medium text-gray-400 mb-2">Panier de dés :</h3>
-                <div id="dice-tray" class="flex flex-wrap gap-2 min-h-[40px] items-center">
-                    <span class="text-gray-500 italic text-sm" id="empty-tray-msg">Aucun dé sélectionné</span>
-                    <!-- Les dés ajoutés apparaîtront ici -->
-                </div>
-                <div class="mt-4 flex space-x-2">
-                    <button id="btn-roll-tray" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">LANCER TOUT</button>
-                    <button id="btn-clear-tray" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Vider</button>
-                </div>
-            </div>
+        <!-- Section Dés (Visible sur Desktop, cachée ou réorganisée sur Mobile) -->
+        <div class="hidden md:block bg-gray-900 rounded-xl shadow-md p-6 md:p-8">
+            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold mb-4">Lancer de Dés</div>
 
-            <div id="dice-buttons" class="mt-4 grid grid-cols-3 md:grid-cols-7 gap-4">
-                <button data-dice="4" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d4</button>
-                <button data-dice="6" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d6</button>
-                <button data-dice="8" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d8</button>
-                <button data-dice="10" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d10</button>
-                <button data-dice="12" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d12</button>
-                <button data-dice="20" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d20</button>
-                <button data-dice="100" class="dice-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">d100</button>
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-400">Dés :</p>
+                    <div class="grid grid-cols-4 md:grid-cols-7 gap-2">
+                        <button data-dice="4" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d4</button>
+                        <button data-dice="6" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d6</button>
+                        <button data-dice="8" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d8</button>
+                        <button data-dice="10" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d10</button>
+                        <button data-dice="12" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d12</button>
+                        <button data-dice="20" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d20</button>
+                        <button data-dice="100" class="dice-btn touch-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-transform active:scale-95">d100</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-400">Modificateurs :</p>
+                    <div class="grid grid-cols-4 md:grid-cols-8 gap-2">
+                        <button data-mod="1" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+1</button>
+                        <button data-mod="-1" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-1</button>
+                        <button data-mod="2" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+2</button>
+                        <button data-mod="-2" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-2</button>
+                        <button data-mod="5" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+5</button>
+                        <button data-mod="-5" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-5</button>
+                        <button data-mod="10" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+10</button>
+                        <button data-mod="-10" class="mod-btn touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-10</button>
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- Journal des Dés -->
+        <div class="bg-gray-900 rounded-xl shadow-md p-6">
+            <h2 class="text-xs font-semibold text-indigo-400 uppercase tracking-widest border-b border-gray-700 pb-2 mb-4">Derniers Lancers</h2>
+            <ul id="dice-log" class="space-y-2 max-h-48 md:max-h-64 overflow-y-auto pr-2 custom-scrollbar"></ul>
         </div>
     </div>
+</div>
+
+<!-- Interface Mobile Sticky Bottom -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 p-4 shadow-2xl z-50">
+    <!-- Panier Compact (affiché seulement si non vide) -->
+    <div id="mobile-tray-container" class="mb-3 hidden">
+        <div id="dice-tray-mobile" class="flex flex-wrap gap-2 max-h-20 overflow-y-auto p-2 bg-gray-800 rounded-lg mb-2"></div>
+        <div class="flex space-x-2">
+            <button id="btn-roll-tray-mobile" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">LANCER TOUT</button>
+            <button id="btn-clear-tray-mobile" class="bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Sélecteur de dés horizontal -->
+    <div class="flex overflow-x-auto space-x-3 pb-2 custom-scrollbar snap-x">
+        <button data-dice="4" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d4</button>
+        <button data-dice="6" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d6</button>
+        <button data-dice="8" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d8</button>
+        <button data-dice="10" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d10</button>
+        <button data-dice="12" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d12</button>
+        <button data-dice="20" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14 text-lg">d20</button>
+        <button data-dice="100" class="dice-btn flex-shrink-0 touch-btn bg-indigo-600 rounded-xl font-bold snap-center w-14 h-14">d100</button>
+        <div class="w-px bg-gray-700 mx-1"></div>
+        <button data-mod="1" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">+1</button>
+        <button data-mod="-1" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">-1</button>
+        <button data-mod="2" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">+2</button>
+        <button data-mod="-2" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">-2</button>
+        <button data-mod="5" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">+5</button>
+        <button data-mod="-5" class="mod-btn flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">-5</button>
+    </div>
+</div>
+
+<!-- Panier de dés Desktop (caché sur mobile) -->
+<div id="desktop-tray-fixed" class="hidden md:flex fixed bottom-6 right-6 flex-col w-64 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-4 transform transition-all duration-300 translate-y-0 z-50">
+    <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Panier</h3>
+        <button id="btn-clear-tray-desktop" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase">Vider</button>
+    </div>
+    <div id="dice-tray-desktop" class="flex flex-wrap gap-2 min-h-[40px] max-h-32 overflow-y-auto mb-4 bg-gray-800 p-2 rounded-lg">
+        <span class="text-gray-500 italic text-[10px]" id="empty-tray-msg-desktop">Vide</span>
+    </div>
+    <button id="btn-roll-tray-desktop" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 transition-all">
+        LANCER TOUT
+    </button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>

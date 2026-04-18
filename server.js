@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const multer = require('multer'); // Ajout de multer
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +15,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- Configuration de Multer pour l'upload d'images ---
 const imageDir = path.join(__dirname, 'public/images');
 
-// S'assurer que le dossier d'upload existe
 if (!fs.existsSync(imageDir)){
     fs.mkdirSync(imageDir, { recursive: true });
 }
@@ -25,14 +24,12 @@ const storage = multer.diskStorage({
         cb(null, imageDir);
     },
     filename: function (req, file, cb) {
-        // Garde le nom de fichier original
         cb(null, file.originalname);
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    // Accepte uniquement les fichiers image
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') {
+    if (file.mimetype.startsWith('image/')) {
         cb(null, true);
     } else {
         cb(new Error('Type de fichier non supporté'), false);
@@ -41,13 +38,10 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-// --- Route API pour l'upload ---
 app.post('/upload', upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('Aucun fichier valide n\'a été uploadé.');
     }
-    // L'upload a réussi, on notifie le MJ pour qu'il rafraîchisse sa liste
-    // On utilise un broadcast global car seul le MJ écoute cet événement
     io.emit('refreshImageList');
     res.status(200).send(`Fichier ${req.file.filename} uploadé avec succès.`);
 });
@@ -56,9 +50,10 @@ app.post('/upload', upload.single('image'), (req, res) => {
 // --- État du Jeu & Gestion des "Sessions" ---
 let gameState = {
     players: [],
-    boss: { name: "Seigneur Vampire", hp: 250, maxHp: 250, armor: 18 }
+    boss: { name: "Mon boss", hp: 0, maxHp: 0, armor: 0 },
+    currentImage: null
 };
-let claimedCharacters = {};
+let claimedCharacters = {}; // socket.id -> player.id
 
 // --- Fonctions Utilitaires ---
 function rollDie(sides) { return Math.floor(Math.random() * sides) + 1; }
@@ -67,87 +62,75 @@ function getPlayerBySocketId(socketId) {
     return gameState.players.find(p => p.id === playerId);
 }
 
+function broadcastGameState() {
+    const onlinePlayerIds = Object.values(claimedCharacters);
+    const updatedState = {
+        ...gameState,
+        players: gameState.players.map(p => ({
+            ...p,
+            isOnline: onlinePlayerIds.includes(p.id)
+        }))
+    };
+    io.emit('gameStateUpdate', updatedState);
+}
+
 // --- Gestion des Connexions Socket.io ---
 io.on('connection', (socket) => {
     console.log(`Client connecté: ${socket.id}`);
-    socket.emit('gameStateUpdate', gameState);
+    broadcastGameState();
 
-    // --- ÉVÉNEMENTS DE GESTION DE PERSONNAGE ---
+    // Renvoyer l'image actuelle si elle existe
+    if (gameState.currentImage) {
+        socket.emit('imageDisplayed', gameState.currentImage);
+    }
+
     socket.on('claimCharacter', (characterName) => {
         if (!characterName) return;
-
         let player = gameState.players.find(p => p.name.toLowerCase() === characterName.toLowerCase());
-
         if (player) {
-            // Vérifie si le personnage est déjà pris
             if (Object.values(claimedCharacters).includes(player.id)) {
                 socket.emit('claimError', `Le personnage "${player.name}" est déjà contrôlé par quelqu'un.`);
                 return;
             }
         } else {
-            // Si le joueur n'existe pas, on le crée
             player = {
                 id: gameState.players.length > 0 ? Math.max(...gameState.players.map(p => p.id)) + 1 : 1,
                 name: characterName,
                 hp: 10, maxHp: 10, armor: 10, gold: 0,
-                customStats: [] // Initialisation des stats personnalisées
+                customStats: []
             };
             gameState.players.push(player);
         }
-
         claimedCharacters[socket.id] = player.id;
-        console.log(`Socket ${socket.id} a pris le contrôle de ${player.name} (ID: ${player.id})`);
-        socket.emit('claimSuccess', player); // Confirme au client qu'il a le contrôle
-        io.emit('gameStateUpdate', gameState); // Met à jour tout le monde
+        socket.emit('claimSuccess', player);
+        broadcastGameState();
     });
 
-    // --- ÉVÉNEMENTS SÉCURISÉS ---
     socket.on('updateStats', (playerData) => {
         const player = getPlayerBySocketId(socket.id);
-        if (!player) return; // Ignore si le client ne contrôle aucun personnage
-
-        console.log(`Reçu "updateStats" de ${player.name}:`, playerData);
+        if (!player) return;
         player.hp = parseInt(playerData.hp_current, 10) || player.hp;
         player.maxHp = parseInt(playerData.hp_max, 10) || player.maxHp;
         player.armor = parseInt(playerData.armor, 10) || player.armor;
         player.gold = parseInt(playerData.gold, 10) || player.gold;
-        
-        // Mise à jour des stats personnalisées si présentes
-        if (playerData.customStats) {
-            player.customStats = playerData.customStats;
-        }
-
-        io.emit('gameStateUpdate', gameState);
+        if (playerData.customStats) player.customStats = playerData.customStats;
+        broadcastGameState();
     });
 
     socket.on('rollDice', (data) => {
-        // data.dice peut être :
-        // 1. Une chaîne "d20" (ancien format)
-        // 2. Un tableau d'objets [{type: 'd6', qty: 2}, {type: 'd20', qty: 1}]
-        
         let diceToRoll = [];
-        
+        let constantModifier = parseInt(data.modifier, 10) || 0;
         if (Array.isArray(data.dice)) {
-            // Format [{type: 'd6', qty: 2}]
             data.dice.forEach(item => {
                 if (item.type && item.qty) {
-                    for (let i = 0; i < item.qty; i++) {
-                        diceToRoll.push(item.type);
-                    }
-                } else if (typeof item === 'string') {
-                    // Cas où on recevrait ['d6', 'd6'] directement
-                    diceToRoll.push(item);
-                }
+                    for (let i = 0; i < item.qty; i++) diceToRoll.push(item.type);
+                } else if (typeof item === 'string') diceToRoll.push(item);
             });
-        } else if (typeof data.dice === 'string') {
-            diceToRoll = [data.dice];
-        } else {
-            return; // Format invalide
-        }
+        } else if (typeof data.dice === 'string') diceToRoll = [data.dice];
+        else return;
 
         let results = [];
-        let total = 0;
-
+        let total = constantModifier;
         diceToRoll.forEach(dieType => {
             const sides = parseInt(dieType.replace('d', ''), 10);
             if (!isNaN(sides)) {
@@ -158,76 +141,78 @@ io.on('connection', (socket) => {
         });
 
         let rollerName = "Anonyme";
-
-        // Si le lancer vient d'un joueur authentifié
         const player = getPlayerBySocketId(socket.id);
-        if (player) {
-            rollerName = player.name;
-        }
-        // Si le lancer vient du MJ (qui peut spécifier un nom)
-        else if (data.player) {
-            rollerName = data.player;
-        }
+        if (player) rollerName = player.name;
+        else if (data.player) rollerName = data.player;
 
-        const diceData = { 
-            player: rollerName, 
-            results: results, // [{type: 'd6', value: 4}, {type: 'd20', value: 15}]
-            total: total 
-        };
-        
-        console.log('Lancer de dé généré par le serveur:', diceData);
+        const diceData = { player: rollerName, results, modifier: constantModifier, total };
         io.emit('diceRolled', diceData);
     });
 
-    // --- ÉVÉNEMENTS DU MJ (non sécurisés, car on fait confiance au MJ) ---
+    // --- MODÉRATION MJ ---
     socket.on('updateBoss', (bossData) => {
-        console.log('Reçu "updateBoss":', bossData);
         gameState.boss = { ...gameState.boss, ...bossData };
-        io.emit('gameStateUpdate', gameState);
+        broadcastGameState();
     });
 
     socket.on('listImages', () => {
         fs.readdir(imageDir, (err, files) => {
-            if (err) {
-                console.error("Impossible de lire le dossier d'images:", err);
-                socket.emit('imageList', []);
-                return;
-            }
+            if (err) return socket.emit('imageList', []);
             const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
             socket.emit('imageList', imageFiles);
         });
     });
 
-    // Nouveaux événements pour la gestion d'images
-    socket.on('displayImage', (imageUrl) => io.emit('showImage', imageUrl));
-    socket.on('hideImage', () => io.emit('hideImage'));
-    
-    // Ancien événement (pour compatibilité si nécessaire, ou à supprimer)
-    socket.on('projectImage', (imageUrl) => io.emit('showImage', imageUrl));
-    
+    socket.on('deleteImage', (imageName) => {
+        const filePath = path.join(imageDir, imageName);
+        if (fs.existsSync(filePath)) {
+            fs.unlink(filePath, (err) => {
+                if (err) console.error("Erreur suppression:", err);
+                if (gameState.currentImage === `images/${imageName}`) {
+                    gameState.currentImage = null;
+                    io.emit('imageHidden');
+                }
+                io.emit('refreshImageList');
+            });
+        }
+    });
+
+    socket.on('kickPlayer', (playerId) => {
+        const socketId = Object.keys(claimedCharacters).find(key => claimedCharacters[key] === playerId);
+        if (socketId) {
+            const targetSocket = io.sockets.sockets.get(socketId);
+            if (targetSocket) {
+                targetSocket.emit('kicked');
+                targetSocket.disconnect(true);
+            }
+            delete claimedCharacters[socketId];
+        }
+        // Supprimer définitivement le joueur de l'état du jeu pour qu'il disparaisse de l'overlay
+        gameState.players = gameState.players.filter(p => p.id !== playerId);
+        broadcastGameState();
+    });
+
+    socket.on('displayImage', (imageUrl) => {
+        gameState.currentImage = imageUrl;
+        io.emit('showImage', imageUrl);
+        io.emit('imageDisplayed', imageUrl);
+    });
+
+    socket.on('hideImage', () => {
+        gameState.currentImage = null;
+        io.emit('hideImage');
+        io.emit('imageHidden');
+    });
+
     socket.on('resetDice', () => io.emit('diceCleared'));
 
     socket.on('disconnect', () => {
-        console.log(`Client déconnecté: ${socket.id}`);
-        const playerId = claimedCharacters[socket.id];
-        if (playerId) {
-            const player = gameState.players.find(p => p.id === playerId);
-            console.log(`${player ? player.name : 'Un joueur'} (ID: ${playerId}) a été libéré.`);
-            delete claimedCharacters[socket.id];
-        }
+        delete claimedCharacters[socket.id];
+        broadcastGameState();
     });
 });
 
-// Lancement du serveur
 const PORT = process.env.PORT || 3000;
-
-if (require.main === module) {
-    server.listen(PORT, () => {
-        console.log(`Serveur JdR lancé sur http://localhost:${PORT}`);
-        console.log(`Interface Joueur: http://localhost:${PORT}/`);
-        console.log(`Interface MJ: http://localhost:${PORT}/gm.html`);
-        console.log(`Overlay: http://localhost:${PORT}/overlay.html`);
-    });
-}
-
-module.exports = { app, server, io };
+server.listen(PORT, () => {
+    console.log(`Serveur JdR lancé sur http://localhost:${PORT}`);
+});

@@ -1,108 +1,165 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Interface MJ</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        .touch-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+
+        .image-container.active-on-stream {
+            border-color: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 100;
+        }
+    </style>
 </head>
-<body class="bg-gray-800 text-white p-4 font-sans">
+<body class="bg-gray-800 text-white font-sans h-full overflow-hidden flex flex-col">
 
-<div class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+<div id="toast-container" class="flex flex-col gap-2"></div>
 
-    <!-- Colonne de Gauche : Contrôles & Logs -->
-    <div class="md:col-span-2 space-y-6">
-        <!-- Section Boss -->
-        <div class="bg-gray-900 rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Contrôle du Boss</h2>
-            <div class="mt-4 space-y-4">
-                <div>
-                    <label for="boss_name" class="block text-sm font-medium text-gray-400">Nom</label>
-                    <input type="text" id="boss_name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="boss_hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
-                        <input type="number" id="boss_hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+<div class="flex-grow overflow-y-auto custom-scrollbar p-4 pb-32 md:pb-4">
+    <div class="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Colonne Gauche : Boss & Joueurs -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Boss -->
+                <div class="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-700">
+                    <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest border-b border-gray-800 pb-3 mb-4">Contrôle du Boss</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-500">Nom de l'entité</label>
+                            <input type="text" id="boss_name" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-500">PV Actuels</label>
+                                <input type="number" id="boss_hp_current" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-500">PV Max</label>
+                                <input type="number" id="boss_hp_max" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-500">Classe d'Armure</label>
+                            <input type="number" id="boss_armor" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-500">
+                        </div>
                     </div>
-                    <div>
-                        <label for="boss_hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
-                        <input type="number" id="boss_hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <!-- Joueurs -->
+                <div class="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-700">
+                    <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest border-b border-gray-800 pb-3 mb-4">Joueurs</h2>
+                    <ul id="online-players-list" class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></ul>
+                </div>
+            </div>
+
+            <!-- Dés (Desktop & Mobile Tablet) -->
+            <div class="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-700">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest">Lancer de Dés</h2>
+                    <input type="text" id="gm_roller_name" value="MJ" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1 text-xs w-32 focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="hidden md:grid grid-cols-2 gap-8 mb-6">
+                    <div class="space-y-4">
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Dés</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button data-dice="4" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d4</button>
+                            <button data-dice="6" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d6</button>
+                            <button data-dice="8" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d8</button>
+                            <button data-dice="10" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d10</button>
+                            <button data-dice="12" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d12</button>
+                            <button data-dice="20" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90 text-lg">d20</button>
+                            <button data-dice="100" class="dice-btn-gm touch-btn bg-teal-600 rounded-lg font-bold transition-transform active:scale-90">d100</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Mods</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button data-mod="1" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+1</button>
+                            <button data-mod="-1" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-1</button>
+                            <button data-mod="2" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+2</button>
+                            <button data-mod="-2" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-2</button>
+                            <button data-mod="5" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+5</button>
+                            <button data-mod="-5" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-5</button>
+                            <button data-mod="10" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">+10</button>
+                            <button data-mod="-10" class="mod-btn-gm touch-btn bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-transform active:scale-95">-10</button>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label for="boss_armor" class="block text-sm font-medium text-gray-400">Armure</label>
-                    <input type="number" id="boss_armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+
+                <div class="bg-gray-800 rounded-2xl p-4 border border-gray-700">
+                    <div id="dice-tray" class="flex flex-wrap gap-2 min-h-[44px] mb-4 items-center">
+                        <span id="empty-tray-msg" class="text-gray-600 italic text-xs">Aucun dé sélectionné...</span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button id="btn-roll-tray" class="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50">LANCER</button>
+                        <button id="btn-clear-tray" class="bg-red-600 hover:bg-red-700 px-6 rounded-xl transition-all active:scale-95">Vider</button>
+                    </div>
                 </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-700">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                     <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest">Logs de la session</h2>
+                     <button id="reset-dice" class="text-red-500 hover:text-red-400 text-[10px] font-bold uppercase">Reset Dés</button>
+                </div>
+                <ul id="dice-log" class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></ul>
             </div>
         </div>
 
-        <!-- Section Lancer de Dés MJ -->
-        <div class="bg-gray-900 rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Lancer de Dés (MJ)</h2>
-            <div class="mt-4 space-y-4">
-                <div>
-                    <label for="gm_roller_name" class="block text-sm font-medium text-gray-400">Nom du Lanceur</label>
-                    <input type="text" id="gm_roller_name" value="MJ" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
+        <!-- Colonne Droite : Galerie -->
+        <div id="drop-zone" class="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-700 flex flex-col h-[600px] lg:h-auto transition-all">
+            <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest border-b border-gray-800 pb-3 mb-4">Bibliothèque d'Images</h2>
 
-                <!-- Panier de dés -->
-                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mt-4">
-                    <h3 class="text-sm font-medium text-gray-400 mb-2">Panier de dés :</h3>
-                    <div id="dice-tray" class="flex flex-wrap gap-2 min-h-[40px] items-center">
-                        <span class="text-gray-500 italic text-sm" id="empty-tray-msg">Aucun dé sélectionné</span>
-                        <!-- Les dés ajoutés apparaîtront ici -->
-                    </div>
-                    <div class="mt-4 flex space-x-2">
-                        <button id="btn-roll-tray" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">LANCER TOUT</button>
-                        <button id="btn-clear-tray" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Vider</button>
-                    </div>
-                </div>
-
-                <div id="gm-dice-buttons" class="grid grid-cols-3 md:grid-cols-7 gap-4">
-                    <button data-dice="4" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d4</button>
-                    <button data-dice="6" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d6</button>
-                    <button data-dice="8" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d8</button>
-                    <button data-dice="10" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d10</button>
-                    <button data-dice="12" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d12</button>
-                    <button data-dice="20" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d20</button>
-                    <button data-dice="100" class="dice-btn-gm bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">d100</button>
+            <div class="mb-6">
+                <div class="relative group">
+                    <input type="file" id="image-input" class="hidden" accept="image/*" multiple>
+                    <label for="image-input" class="flex flex-col items-center justify-center w-full py-4 border-2 border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-indigo-500 transition-colors bg-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-500 mb-2 group-hover:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span class="text-[10px] text-gray-500 group-hover:text-indigo-400 font-bold uppercase">Déposer ou cliquer pour ajouter</span>
+                    </label>
                 </div>
             </div>
-        </div>
 
-        <!-- Section Log des Dés -->
-        <div class="bg-gray-900 rounded-xl shadow-md p-6">
-            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                 <h2 class="text-xl font-semibold text-indigo-400">Journal des Lancers</h2>
-                 <button id="reset-dice" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm">Reset Dés</button>
+            <div id="image-list" class="grid grid-cols-2 gap-3 overflow-y-auto flex-grow custom-scrollbar pr-1"></div>
+
+            <div class="mt-6 flex space-x-3">
+                <button id="btn-show-image" class="flex-grow bg-green-600 py-4 rounded-xl text-xs font-black shadow-lg disabled:opacity-50 active:scale-95 transition-all">PROJETER</button>
+                <button id="btn-hide-image" class="bg-red-600 px-6 rounded-xl shadow-lg active:scale-95 transition-all">OFF</button>
             </div>
-            <ul id="dice-log" class="mt-4 space-y-2 h-64 overflow-y-auto">
-                <!-- Les lancers de dés apparaîtront ici -->
-            </ul>
         </div>
     </div>
+</div>
 
-    <!-- Colonne de Droite : Images -->
-    <div class="bg-gray-900 rounded-xl shadow-md p-6 flex flex-col">
-        <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Projection d'Images</h2>
-
-        <!-- Formulaire d'upload -->
-        <form id="upload-form" class="mt-4">
-            <input type="file" id="image-input" name="image" accept="image/png, image/jpeg, image/gif" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
-            <button type="submit" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Envoyer l'image</button>
-        </form>
-
-        <div id="image-list" class="mt-4 grid grid-cols-2 gap-4 overflow-y-auto flex-grow">
-            <!-- Les images à projeter apparaîtront ici -->
-        </div>
-
-        <!-- Boutons de contrôle de projection -->
-        <div class="mt-4 flex space-x-2">
-            <button id="btn-show-image" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">Afficher sur le Stream</button>
-            <button id="btn-hide-image" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Masquer</button>
-        </div>
+<!-- Mobile Sticky Bottom (MJ) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 p-4 shadow-2xl z-50">
+    <div class="flex overflow-x-auto space-x-3 pb-2 custom-scrollbar snap-x">
+        <button data-dice="4" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14">d4</button>
+        <button data-dice="6" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14">d6</button>
+        <button data-dice="8" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14">d8</button>
+        <button data-dice="10" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14">d10</button>
+        <button data-dice="12" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14">d12</button>
+        <button data-dice="20" class="dice-btn-gm flex-shrink-0 touch-btn bg-teal-600 rounded-xl font-bold snap-center w-14 h-14 text-lg">d20</button>
+        <button data-mod="1" class="mod-btn-gm flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">+1</button>
+        <button data-mod="-1" class="mod-btn-gm flex-shrink-0 touch-btn bg-orange-600 rounded-xl font-bold snap-center w-14 h-14">-1</button>
     </div>
-
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
