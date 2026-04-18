@@ -11,28 +11,39 @@
 
     <!-- Colonne de Gauche : Contrôles & Logs -->
     <div class="md:col-span-2 space-y-6">
-        <!-- Section Boss -->
-        <div class="bg-gray-900 rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Contrôle du Boss</h2>
-            <div class="mt-4 space-y-4">
-                <div>
-                    <label for="boss_name" class="block text-sm font-medium text-gray-400">Nom</label>
-                    <input type="text" id="boss_name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <!-- Section Boss -->
+            <div class="bg-gray-900 rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Contrôle du Boss</h2>
+                <div class="mt-4 space-y-4">
                     <div>
-                        <label for="boss_hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
-                        <input type="number" id="boss_hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="boss_name" class="block text-sm font-medium text-gray-400">Nom</label>
+                        <input type="text" id="boss_name" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="boss_hp_current" class="block text-sm font-medium text-gray-400">PV Actuels</label>
+                            <input type="number" id="boss_hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="boss_hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
+                            <input type="number" id="boss_hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
                     </div>
                     <div>
-                        <label for="boss_hp_max" class="block text-sm font-medium text-gray-400">PV Max</label>
-                        <input type="number" id="boss_hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="boss_armor" class="block text-sm font-medium text-gray-400">Armure</label>
+                        <input type="number" id="boss_armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
-                <div>
-                    <label for="boss_armor" class="block text-sm font-medium text-gray-400">Armure</label>
-                    <input type="number" id="boss_armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
+            </div>
+
+            <!-- Section Joueurs Connectés -->
+            <div class="bg-gray-900 rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Joueurs Connectés</h2>
+                <ul id="online-players-list" class="mt-4 space-y-2 max-h-48 overflow-y-auto pr-2">
+                    <!-- Liste des joueurs en ligne -->
+                </ul>
             </div>
         </div>
 
@@ -50,7 +61,6 @@
                     <h3 class="text-sm font-medium text-gray-400 mb-2">Panier de dés :</h3>
                     <div id="dice-tray" class="flex flex-wrap gap-2 min-h-[40px] items-center">
                         <span class="text-gray-500 italic text-sm" id="empty-tray-msg">Aucun dé sélectionné</span>
-                        <!-- Les dés ajoutés apparaîtront ici -->
                     </div>
                     <div class="mt-4 flex space-x-2">
                         <button id="btn-roll-tray" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">LANCER TOUT</button>
@@ -93,34 +103,36 @@
                  <h2 class="text-xl font-semibold text-indigo-400">Journal des Lancers</h2>
                  <button id="reset-dice" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm">Reset Dés</button>
             </div>
-            <ul id="dice-log" class="mt-4 space-y-2 h-64 overflow-y-auto">
-                <!-- Les lancers de dés apparaîtront ici -->
-            </ul>
+            <ul id="dice-log" class="mt-4 space-y-2 h-64 overflow-y-auto"></ul>
         </div>
     </div>
 
     <!-- Colonne de Droite : Images -->
-    <div class="bg-gray-900 rounded-xl shadow-md p-6 flex flex-col">
+    <div class="bg-gray-900 rounded-xl shadow-md p-6 flex flex-col h-full">
         <h2 class="text-xl font-semibold text-indigo-400 border-b border-gray-700 pb-2">Projection d'Images</h2>
 
-        <!-- Formulaire d'upload -->
         <form id="upload-form" class="mt-4">
             <input type="file" id="image-input" name="image" accept="image/png, image/jpeg, image/gif" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
             <button type="submit" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Envoyer l'image</button>
         </form>
 
-        <div id="image-list" class="mt-4 grid grid-cols-2 gap-4 overflow-y-auto flex-grow">
-            <!-- Les images à projeter apparaîtront ici -->
+        <div id="image-list" class="mt-4 grid grid-cols-1 gap-4 overflow-y-auto flex-grow pr-2 custom-scrollbar">
+            <!-- Liste des images -->
         </div>
 
-        <!-- Boutons de contrôle de projection -->
         <div class="mt-4 flex space-x-2">
-            <button id="btn-show-image" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">Afficher sur le Stream</button>
+            <button id="btn-show-image" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">Afficher</button>
             <button id="btn-hide-image" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Masquer</button>
         </div>
     </div>
 
 </div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+</style>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="gm.js"></script>
