@@ -34,6 +34,23 @@
             border: 2px solid #4b5563;
             border-radius: 8px;
         }
+
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        .input-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-800 text-white font-sans h-full flex flex-col overflow-hidden">
@@ -51,24 +68,40 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="space-y-1">
                         <label for="hp_current" class="block text-xs font-medium text-gray-400">PV Actuels</label>
-                        <input type="number" id="hp_current" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                        <div class="flex">
+                            <button onclick="adjustValue('hp_current', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="hp_current" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('hp_current', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
-                    <div>
+                    <div class="space-y-1">
                         <label for="hp_max" class="block text-xs font-medium text-gray-400">PV Max</label>
-                        <input type="number" id="hp_max" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                        <div class="flex">
+                            <button onclick="adjustValue('hp_max', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="hp_max" min="1" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('hp_max', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="space-y-1">
                         <label for="armor" class="block text-xs font-medium text-gray-400">Armure</label>
-                        <input type="number" id="armor" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                        <div class="flex">
+                            <button onclick="adjustValue('armor', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="armor" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('armor', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
-                    <div>
+                    <div class="space-y-1">
                         <label for="gold" class="block text-xs font-medium text-gray-400">Or</label>
-                        <input type="number" id="gold" class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                        <div class="flex">
+                            <button onclick="adjustValue('gold', -1)" class="bg-gray-700 border border-gray-600 border-r-0 rounded-l-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">-</button>
+                            <input type="number" id="gold" class="block w-full bg-gray-700 border border-gray-600 py-3 px-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-center">
+                            <button onclick="adjustValue('gold', 1)" class="bg-gray-700 border border-gray-600 border-l-0 rounded-r-md px-3 hover:bg-gray-600 active:bg-indigo-600 transition-colors">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,7 +117,7 @@
                     <div class="grid grid-cols-1 gap-3">
                         <input type="text" id="new-stat-name" placeholder="Nom (ex: Mana)" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-base text-white w-full focus:ring-2 focus:ring-indigo-500">
                         <div class="flex gap-3">
-                             <input type="number" id="new-stat-max" placeholder="Valeur Max" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-base text-white flex-1 focus:ring-2 focus:ring-indigo-500">
+                             <input type="number" id="new-stat-max" min="1" placeholder="Valeur Max" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-base text-white flex-1 focus:ring-2 focus:ring-indigo-500">
                              <div class="flex flex-col items-center">
                                  <label class="text-[10px] text-gray-500 font-bold mb-1 uppercase">Couleur</label>
                                  <input type="color" id="new-stat-color" value="#4F46E5" class="rounded-lg">

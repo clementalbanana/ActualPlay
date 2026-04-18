@@ -51,6 +51,42 @@ function debounce(func, delay = 300) {
     };
 }
 
+// --- Logique de Validation et Ajustement ---
+window.adjustValue = (id, delta) => {
+    const input = document.getElementById(id);
+    let val = parseInt(input.value, 10) || 0;
+    val += delta;
+
+    // Validation spécifique
+    if (id === 'hp_max' && val < 1) val = 1;
+
+    input.value = val;
+    validateInput(input);
+    sendStatsUpdate();
+};
+
+function validateInput(input) {
+    const val = input.value;
+    const numericVal = parseInt(val, 10);
+    let isValid = true;
+
+    if (val === '' || isNaN(numericVal)) {
+        isValid = false;
+    } else {
+        if (input.id === 'hp_max' && numericVal < 1) {
+            isValid = false;
+        }
+    }
+
+    if (!isValid) {
+        input.classList.add('input-error');
+    } else {
+        input.classList.remove('input-error');
+    }
+
+    return isValid;
+}
+
 // --- Logique du Panier de Dés ---
 function updateDiceTrayUI() {
     // Mobile UI
@@ -151,13 +187,18 @@ function updateForm(player) {
 }
 
 const sendStatsUpdate = debounce(() => {
-    if (characterClaimed) socket.emit('updateStats', {
-        hp_current: hpCurrentInput.value,
-        hp_max: hpMaxInput.value,
-        armor: armorInput.value,
-        gold: goldInput.value,
-        customStats: customStats
-    });
+    // Vérifier si tous les champs sont valides avant d'envoyer
+    const areInputsValid = allInputs.every(input => validateInput(input));
+
+    if (characterClaimed && areInputsValid) {
+        socket.emit('updateStats', {
+            hp_current: hpCurrentInput.value,
+            hp_max: hpMaxInput.value,
+            armor: armorInput.value,
+            gold: goldInput.value,
+            customStats: customStats
+        });
+    }
 });
 
 function renderCustomStats() {
@@ -238,7 +279,12 @@ nameInput.onchange = () => {
     }
 };
 
-allInputs.forEach(input => input.oninput = sendStatsUpdate);
+allInputs.forEach(input => {
+    input.oninput = () => {
+        validateInput(input);
+        sendStatsUpdate();
+    };
+});
 
 socket.on('claimSuccess', (player) => {
     characterClaimed = true;
@@ -253,10 +299,22 @@ socket.on('gameStateUpdate', (gameState) => {
     if (!characterClaimed) return;
     const myPlayer = gameState.players.find(p => p.name === nameInput.value);
     if (myPlayer) {
-        if (hpCurrentInput.value != myPlayer.hp) hpCurrentInput.value = myPlayer.hp;
-        if (hpMaxInput.value != myPlayer.maxHp) hpMaxInput.value = myPlayer.maxHp;
-        if (armorInput.value != myPlayer.armor) armorInput.value = myPlayer.armor;
-        if (goldInput.value != myPlayer.gold) goldInput.value = myPlayer.gold;
+        if (hpCurrentInput.value != myPlayer.hp) {
+            hpCurrentInput.value = myPlayer.hp;
+            validateInput(hpCurrentInput);
+        }
+        if (hpMaxInput.value != myPlayer.maxHp) {
+            hpMaxInput.value = myPlayer.maxHp;
+            validateInput(hpMaxInput);
+        }
+        if (armorInput.value != myPlayer.armor) {
+            armorInput.value = myPlayer.armor;
+            validateInput(armorInput);
+        }
+        if (goldInput.value != myPlayer.gold) {
+            goldInput.value = myPlayer.gold;
+            validateInput(goldInput);
+        }
         if (JSON.stringify(myPlayer.customStats) !== JSON.stringify(customStats)) {
              customStats = myPlayer.customStats || [];
              renderCustomStats();
