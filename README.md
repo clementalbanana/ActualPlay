@@ -29,7 +29,7 @@ Elle permet de connecter en temps réel les interfaces des **Joueurs**, du **Ma�
 1.  **Prérequis :** Assurez-vous d'avoir [Node.js](https://nodejs.org/) installé sur votre machine.
 2.  **Cloner le projet :**
     ```bash
-    git clone https://github.com/votre-utilisateur/ActualPlay.git
+    git clone https://github.com/clementalbanana/ActualPlay.git
     cd ActualPlay
     ```
 3.  **Installer les dépendances :**
