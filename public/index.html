@@ -7,8 +7,9 @@
 </head>
 <body class="bg-gray-800 text-white p-4">
 
-<div class="max-w-md mx-auto bg-gray-900 rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-    <div class="p-8">
+<div class="max-w-md mx-auto space-y-6 md:max-w-2xl">
+    <!-- Fiche de Personnage -->
+    <div class="bg-gray-900 rounded-xl shadow-md overflow-hidden p-8">
         <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Fiche de Personnage</div>
         <div class="mt-4">
             <label for="name" class="block text-sm font-medium text-gray-400">Nom</label>
@@ -110,7 +111,31 @@
             </div>
         </div>
     </div>
+
+    <!-- Journal des Dés -->
+    <div class="bg-gray-900 rounded-xl shadow-md p-6">
+        <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-wide border-b border-gray-700 pb-2">Journal des Lancer</h2>
+        <ul id="dice-log" class="mt-4 space-y-2 h-48 overflow-y-auto pr-2 custom-scrollbar">
+            <!-- Les lancers de dés apparaîtront ici -->
+        </ul>
+    </div>
 </div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #1f2937;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #6366f1;
+    }
+</style>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>

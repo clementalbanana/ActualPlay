@@ -9,6 +9,7 @@ const goldInput = document.getElementById('gold');
 const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
 const modButtons = document.querySelectorAll('.mod-btn');
+const diceLog = document.getElementById('dice-log');
 
 // Éléments Panier de dés
 const diceTray = document.getElementById('dice-tray');
@@ -322,6 +323,49 @@ socket.on('gameStateUpdate', (gameState) => {
              renderCustomStats();
         }
     }
+});
+
+socket.on('diceRolled', (data) => {
+    const li = document.createElement('li');
+    li.className = 'bg-gray-800 p-3 rounded-lg border border-gray-700 text-xs shadow-sm transition-all hover:border-indigo-500';
+
+    let diceDisplay = "";
+    if (Array.isArray(data.results)) {
+        // Grouper par type de dé pour l'affichage
+        const groups = {};
+        data.results.forEach(r => {
+            if (!groups[r.type]) groups[r.type] = [];
+            groups[r.type].push(r.value);
+        });
+
+        let details = Object.keys(groups).map(type => {
+            return `${groups[type].length}${type} [${groups[type].join(', ')}]`;
+        }).join(' + ');
+
+        if (data.modifier !== 0) {
+            details += (data.modifier > 0 ? ` + ${data.modifier}` : ` - ${Math.abs(data.modifier)}`);
+        }
+
+        diceDisplay = `
+            <div class="flex justify-between items-center">
+                <span class="font-bold text-indigo-400 truncate mr-2" style="max-width: 80px;">${data.player}</span>
+                <span class="text-gray-400 italic flex-1 truncate text-right mr-3" title="${details}">${details}</span>
+                <span class="font-black text-yellow-400 text-sm">Total: ${data.total}</span>
+            </div>
+        `;
+    }
+
+    li.innerHTML = diceDisplay;
+    diceLog.prepend(li);
+
+    // Garder seulement les 50 derniers logs
+    if (diceLog.children.length > 50) {
+        diceLog.lastElementChild.remove();
+    }
+});
+
+socket.on('diceCleared', () => {
+    diceLog.innerHTML = '';
 });
 
 // Gère la déconnexion pour réactiver le champ nom
