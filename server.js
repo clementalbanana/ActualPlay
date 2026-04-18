@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') {
+    if (file.mimetype.startsWith('image/')) {
         cb(null, true);
     } else {
         cb(new Error('Type de fichier non supporté'), false);
@@ -50,7 +50,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
 // --- État du Jeu & Gestion des "Sessions" ---
 let gameState = {
     players: [],
-    boss: { name: "Seigneur Vampire", hp: 250, maxHp: 250, armor: 18 }
+    boss: { name: "Mon boss", hp: 0, maxHp: 0, armor: 0 },
+    currentImage: null
 };
 let claimedCharacters = {}; // socket.id -> player.id
 
@@ -62,7 +63,6 @@ function getPlayerBySocketId(socketId) {
 }
 
 function broadcastGameState() {
-    // On ajoute une info sur qui est en ligne
     const onlinePlayerIds = Object.values(claimedCharacters);
     const updatedState = {
         ...gameState,
@@ -78,6 +78,11 @@ function broadcastGameState() {
 io.on('connection', (socket) => {
     console.log(`Client connecté: ${socket.id}`);
     broadcastGameState();
+
+    // Renvoyer l'image actuelle si elle existe
+    if (gameState.currentImage) {
+        socket.emit('imageDisplayed', gameState.currentImage);
+    }
 
     socket.on('claimCharacter', (characterName) => {
         if (!characterName) return;
@@ -163,6 +168,10 @@ io.on('connection', (socket) => {
         if (fs.existsSync(filePath)) {
             fs.unlink(filePath, (err) => {
                 if (err) console.error("Erreur suppression:", err);
+                if (gameState.currentImage === `images/${imageName}`) {
+                    gameState.currentImage = null;
+                    io.emit('imageHidden');
+                }
                 io.emit('refreshImageList');
             });
         }
@@ -181,8 +190,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('displayImage', (imageUrl) => io.emit('showImage', imageUrl));
-    socket.on('hideImage', () => io.emit('hideImage'));
+    socket.on('displayImage', (imageUrl) => {
+        gameState.currentImage = imageUrl;
+        io.emit('showImage', imageUrl);
+        io.emit('imageDisplayed', imageUrl);
+    });
+
+    socket.on('hideImage', () => {
+        gameState.currentImage = null;
+        io.emit('hideImage');
+        io.emit('imageHidden');
+    });
+
     socket.on('resetDice', () => io.emit('diceCleared'));
 
     socket.on('disconnect', () => {
