@@ -5,6 +5,11 @@ const nameInput = document.getElementById('name');
 const hpCurrentInput = document.getElementById('hp_current');
 const hpMaxInput = document.getElementById('hp_max');
 const goldInput = document.getElementById('gold');
+const isPublicInput = document.getElementById('is_public');
+const googleDocInput = document.getElementById('google-doc-id');
+const googleDocError = document.getElementById('google-doc-error');
+const btnImportDoc = document.getElementById('btn-import-doc');
+const docImportResult = document.getElementById('doc-import-result');
 const allInputs = [hpCurrentInput, hpMaxInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
 const modButtons = document.querySelectorAll('.mod-btn');
@@ -178,6 +183,11 @@ function updateForm(player) {
     hpCurrentInput.value = player.hp;
     hpMaxInput.value = player.maxHp;
     goldInput.value = player.gold;
+    isPublicInput.checked = !!player.isPublic;
+    if (document.activeElement !== googleDocInput) {
+        googleDocInput.value = player.googleDocId || '';
+    }
+    refreshImportButton();
     if (player.customStats) {
         customStats = player.customStats;
         renderCustomStats();
@@ -193,9 +203,151 @@ const sendStatsUpdate = debounce(() => {
             hp_current: hpCurrentInput.value,
             hp_max: hpMaxInput.value,
             gold: goldInput.value,
-            customStats: customStats
+            customStats: customStats,
+            isPublic: isPublicInput.checked,
+            googleDocId: googleDocInput.value
         });
     }
+});
+
+isPublicInput.onchange = () => {
+    if (characterClaimed) sendStatsUpdate();
+};
+
+// --- Import des statistiques depuis un Google Doc ---
+// Extraction de l'ID depuis un lien de partage complet ou un ID brut collé.
+function extractDocId(input) {
+    if (typeof input !== 'string') return null;
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    const urlMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (urlMatch) return urlMatch[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) return trimmed;
+    return null;
+}
+
+function showDocError(message) {
+    googleDocError.textContent = message;
+    googleDocError.classList.remove('hidden');
+}
+function clearDocError() {
+    googleDocError.textContent = '';
+    googleDocError.classList.add('hidden');
+}
+
+// Le bouton d'import n'est visible que si un ID de document valide est renseigné.
+function refreshImportButton() {
+    const value = googleDocInput.value.trim();
+    const docId = extractDocId(value);
+    btnImportDoc.classList.toggle('hidden', !docId);
+    if (value && !docId) {
+        showDocError('Lien ou identifiant Google Docs invalide.');
+    } else {
+        clearDocError();
+    }
+}
+
+googleDocInput.oninput = refreshImportButton;
+googleDocInput.onchange = () => {
+    refreshImportButton();
+    if (characterClaimed && (extractDocId(googleDocInput.value) || googleDocInput.value.trim() === '')) {
+        sendStatsUpdate();
+    }
+};
+
+let importTimeoutId = null;
+function resetImportButton() {
+    clearTimeout(importTimeoutId);
+    btnImportDoc.disabled = false;
+    btnImportDoc.textContent = 'Importer depuis Google Docs';
+}
+
+btnImportDoc.onclick = () => {
+    if (!characterClaimed) {
+        showDocError("Choisissez d'abord un nom de personnage.");
+        return;
+    }
+    const docId = extractDocId(googleDocInput.value);
+    if (!docId) {
+        showDocError('Lien ou identifiant Google Docs invalide.');
+        return;
+    }
+    clearDocError();
+    docImportResult.classList.add('hidden');
+    btnImportDoc.disabled = true;
+    btnImportDoc.textContent = 'Import en cours…';
+    socket.emit('importGoogleDocStats', { docId: googleDocInput.value });
+    // Filet de sécurité si le serveur ne répond jamais.
+    importTimeoutId = setTimeout(() => {
+        resetImportButton();
+        renderImportError("Le serveur n'a pas répondu. Réessayez.");
+    }, 15000);
+};
+
+function renderImportError(message) {
+    docImportResult.innerHTML = '';
+    docImportResult.classList.remove('hidden', 'border-gray-700');
+    docImportResult.classList.add('border-red-500');
+    const p = document.createElement('p');
+    p.className = 'text-red-400';
+    p.textContent = message;
+    docImportResult.appendChild(p);
+}
+
+function renderImportSummary(changes, warnings) {
+    docImportResult.innerHTML = '';
+    docImportResult.classList.remove('hidden', 'border-red-500');
+    docImportResult.classList.add('border-gray-700');
+
+    const title = document.createElement('p');
+    title.className = 'font-bold text-green-400';
+    title.textContent = 'Import terminé';
+    docImportResult.appendChild(title);
+
+    if (changes.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'text-gray-400';
+        p.textContent = 'Aucune valeur modifiée : la fiche correspond déjà au document.';
+        docImportResult.appendChild(p);
+    } else {
+        const ul = document.createElement('ul');
+        ul.className = 'space-y-1';
+        changes.forEach(change => {
+            const li = document.createElement('li');
+            li.className = 'text-gray-200';
+            li.textContent = change.note
+                ? `${change.label} : ${change.note}`
+                : `${change.label} : ${change.before} → ${change.after}`;
+            ul.appendChild(li);
+        });
+        docImportResult.appendChild(ul);
+    }
+
+    if (warnings.length > 0) {
+        const warnTitle = document.createElement('p');
+        warnTitle.className = 'font-semibold text-amber-400 pt-1';
+        warnTitle.textContent = 'Avertissements';
+        docImportResult.appendChild(warnTitle);
+        const ul = document.createElement('ul');
+        ul.className = 'space-y-1 list-disc list-inside';
+        warnings.forEach(warning => {
+            const li = document.createElement('li');
+            li.className = 'text-amber-300/90 text-xs';
+            li.textContent = warning;
+            ul.appendChild(li);
+        });
+        docImportResult.appendChild(ul);
+    }
+}
+
+socket.on('googleDocImportResult', (result) => {
+    resetImportButton();
+    if (!result || !result.ok) {
+        renderImportError(result && result.error ? result.error : "L'import a échoué.");
+        return;
+    }
+    if (result.player) updateForm(result.player);
+    renderImportSummary(result.changes || [], result.warnings || []);
 });
 
 function renderCustomStats() {
@@ -375,6 +527,14 @@ socket.on('gameStateUpdate', (gameState) => {
              customStats = myPlayer.customStats || [];
              renderCustomStats();
         }
+        if (document.activeElement !== isPublicInput && isPublicInput.checked !== !!myPlayer.isPublic) {
+             isPublicInput.checked = !!myPlayer.isPublic;
+        }
+        if ('googleDocId' in myPlayer && document.activeElement !== googleDocInput
+            && (myPlayer.googleDocId || '') !== googleDocInput.value.trim()) {
+             googleDocInput.value = myPlayer.googleDocId || '';
+             refreshImportButton();
+        }
     }
 });
 
@@ -400,6 +560,11 @@ socket.on('kicked', () => {
     alert("Expulsé par le MJ.");
     localStorage.removeItem('jdr_playerName');
     window.location.reload();
+});
+
+// Cookie de connexion expiré / invalide en cours de session : retour au login.
+socket.on('authRequired', () => {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
 });
 
 socket.on('disconnect', () => { characterClaimed = false; nameInput.disabled = false; nameInput.classList.remove('bg-gray-600'); });

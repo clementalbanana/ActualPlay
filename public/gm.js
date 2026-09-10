@@ -257,6 +257,10 @@ socket.on('diceRolled', (data) => {
     document.getElementById('dice-log').prepend(li);
 });
 
+socket.on('authRequired', () => {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+});
+
 socket.on('diceCleared', () => document.getElementById('dice-log').innerHTML = '');
 socket.on('refreshImageList', () => socket.emit('listImages'));
 

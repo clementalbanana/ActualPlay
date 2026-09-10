@@ -45,9 +45,36 @@ Elle permet de connecter en temps réel les interfaces des **Joueurs**, du **Ma�
 
 Une fois le serveur lancé (par défaut sur le port 3000), ouvrez votre navigateur :
 
-*   **Interface Joueur :** `http://localhost:3000/` (À ouvrir sur les téléphones/PC des joueurs)
+*   **Portail d'accueil :** `http://localhost:3000/` (Public : règles + fiches de personnages publiques en lecture seule)
+*   **Interface Joueur :** `http://localhost:3000/create` (À ouvrir sur les téléphones/PC des joueurs — ancienne URL `/`)
 *   **Interface MJ :** `http://localhost:3000/gm.html` (À ouvrir sur l'écran du MJ)
+*   **Règles :** `http://localhost:3000/regles`
 *   **Overlay :** `http://localhost:3000/overlay.html` (À ne pas ouvrir directement, voir section OBS)
+
+### 🔒 Accès protégé (joueurs / MJ)
+
+Les pages `/create` et `/gm.html` sont réservées aux participants : un premier accès
+redirige vers `/login` qui demande un mot de passe partagé. Le portail, les règles,
+les fiches publiques et l'overlay restent librement accessibles.
+
+Le mot de passe se configure via la variable d'environnement `APP_PASSWORD`
+(valeur par défaut si non défini : `ElieEnBikini!2026`).
+
+```bash
+APP_PASSWORD="MonMotDePasse" node server.js
+```
+
+### 📄 Import depuis Google Docs
+
+Sur la fiche de personnage, coller le lien de partage (ou l'ID) d'un Google Doc
+**public** (« Tous les utilisateurs disposant du lien peuvent consulter »), puis
+cliquer sur « Importer depuis Google Docs ». Le serveur lit l'export texte du
+document et remplit les statistiques trouvées sous la forme `Nom: valeur` :
+
+*   `PV` (ou `Points de Vie`) → PV courants **et** PV max
+*   `Or`
+*   toute statistique personnalisée déjà présente sur la fiche (par son nom)
+*   `Description :` → le paragraphe qui suit (affiché sur la fiche publique en lecture seule, `/fiche?id=…`)
 
 ## 🎥 Intégration OBS / Streamlabs
 
