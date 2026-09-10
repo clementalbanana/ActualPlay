@@ -51,6 +51,13 @@
             border-color: #ef4444 !important;
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
         }
+
+        /* Poignée de glisser-déposer pour réordonner les stats perso */
+        .stat-drag-handle {
+            cursor: grab;
+            touch-action: none; /* évite le scroll de la page pendant le glissement tactile */
+        }
+        .custom-stat-card { touch-action: pan-y; }
     </style>
 </head>
 <body class="bg-gray-800 text-white font-sans h-full flex flex-col overflow-hidden">

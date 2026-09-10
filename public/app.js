@@ -203,10 +203,16 @@ function renderCustomStats() {
     customStats.forEach((stat, index) => {
         const percentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
         const div = document.createElement('div');
-        div.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
+        div.className = 'custom-stat-card bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
+        div.dataset.index = index;
         div.innerHTML = `
             <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <button class="stat-drag-handle text-gray-500 hover:text-gray-300 p-1 -ml-1 active:cursor-grabbing" aria-label="Glisser pour réordonner" title="Glisser pour réordonner">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 4a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 4zM7 10a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 10zM7 16a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 16zM15.5 4a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM15.5 10a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM15.5 16a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0z" />
+                        </svg>
+                    </button>
                     <input type="color" value="${stat.color || '#4F46E5'}" onchange="updateStatColor(${index}, this.value)">
                     <span class="text-sm font-bold text-gray-200">${stat.name}</span>
                 </div>
@@ -229,6 +235,63 @@ function renderCustomStats() {
         `;
         customStatsList.appendChild(div);
     });
+    setupStatDragHandles();
+}
+
+// --- Réordonnancement des stats perso par glisser-déposer ---
+// Fonctionne à la souris et au tactile (Pointer Events). L'ordre du tableau
+// customStats est envoyé au serveur, l'overlay se met donc à jour tout seul.
+let statDrag = null;
+
+function setupStatDragHandles() {
+    customStatsList.querySelectorAll('.stat-drag-handle').forEach(handle => {
+        handle.addEventListener('pointerdown', onStatDragStart);
+    });
+}
+
+function onStatDragStart(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const card = e.target.closest('.custom-stat-card');
+    if (!card) return;
+    e.preventDefault();
+
+    statDrag = { card };
+    card.classList.add('opacity-40', 'ring-2', 'ring-indigo-500');
+
+    document.addEventListener('pointermove', onStatDragMove);
+    document.addEventListener('pointerup', onStatDragEnd, { once: true });
+    document.addEventListener('pointercancel', onStatDragEnd, { once: true });
+}
+
+function onStatDragMove(e) {
+    if (!statDrag) return;
+    const others = [...customStatsList.querySelectorAll('.custom-stat-card')]
+        .filter(el => el !== statDrag.card);
+    const before = others.find(el => {
+        const r = el.getBoundingClientRect();
+        return e.clientY < r.top + r.height / 2;
+    });
+    if (before) {
+        customStatsList.insertBefore(statDrag.card, before);
+    } else {
+        customStatsList.appendChild(statDrag.card);
+    }
+}
+
+function onStatDragEnd() {
+    if (!statDrag) return;
+    document.removeEventListener('pointermove', onStatDragMove);
+    statDrag.card.classList.remove('opacity-40', 'ring-2', 'ring-indigo-500');
+
+    const newOrder = [...customStatsList.querySelectorAll('.custom-stat-card')]
+        .map(el => customStats[parseInt(el.dataset.index, 10)])
+        .filter(Boolean);
+    statDrag = null;
+
+    const changed = newOrder.some((s, i) => s !== customStats[i]);
+    customStats = newOrder;
+    renderCustomStats();
+    if (changed) sendStatsUpdate();
 }
 
 window.updateStatColor = (idx, color) => {
