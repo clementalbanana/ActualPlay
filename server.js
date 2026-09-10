@@ -50,7 +50,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
 // --- État du Jeu & Gestion des "Sessions" ---
 let gameState = {
     players: [],
-    boss: { name: "Mon boss", hp: 0, maxHp: 0, armor: 0 },
+    boss: { name: "Mon boss", hp: 0, maxHp: 0 },
     currentImage: null
 };
 let claimedCharacters = {}; // socket.id -> player.id
@@ -96,7 +96,7 @@ io.on('connection', (socket) => {
             player = {
                 id: gameState.players.length > 0 ? Math.max(...gameState.players.map(p => p.id)) + 1 : 1,
                 name: characterName,
-                hp: 10, maxHp: 10, armor: 10, gold: 0,
+                hp: 10, maxHp: 10, gold: 0,
                 customStats: []
             };
             gameState.players.push(player);
@@ -111,7 +111,6 @@ io.on('connection', (socket) => {
         if (!player) return;
         player.hp = parseInt(playerData.hp_current, 10) || player.hp;
         player.maxHp = parseInt(playerData.hp_max, 10) || player.maxHp;
-        player.armor = parseInt(playerData.armor, 10) || player.armor;
         player.gold = parseInt(playerData.gold, 10) || player.gold;
         if (playerData.customStats) player.customStats = playerData.customStats;
         broadcastGameState();

@@ -33,18 +33,16 @@ function showToast(message, type = 'info') {
 const bossNameInput = document.getElementById('boss_name');
 const bossHpCurrentInput = document.getElementById('boss_hp_current');
 const bossHpMaxInput = document.getElementById('boss_hp_max');
-const bossArmorInput = document.getElementById('boss_armor');
 
 function updateBoss() {
     socket.emit('updateBoss', {
         name: bossNameInput.value,
         hp: parseInt(bossHpCurrentInput.value, 10),
-        maxHp: parseInt(bossHpMaxInput.value, 10),
-        armor: parseInt(bossArmorInput.value, 10)
+        maxHp: parseInt(bossHpMaxInput.value, 10)
     });
 }
 const debouncedUpdateBoss = debounce(updateBoss, 500);
-[bossNameInput, bossHpCurrentInput, bossHpMaxInput, bossArmorInput].forEach(input => {
+[bossNameInput, bossHpCurrentInput, bossHpMaxInput].forEach(input => {
     input.addEventListener('input', debouncedUpdateBoss);
 });
 
@@ -246,7 +244,6 @@ socket.on('gameStateUpdate', (gameState) => {
     if (document.activeElement !== bossNameInput) bossNameInput.value = gameState.boss.name;
     if (document.activeElement !== bossHpCurrentInput) bossHpCurrentInput.value = gameState.boss.hp;
     if (document.activeElement !== bossHpMaxInput) bossHpMaxInput.value = gameState.boss.maxHp;
-    if (document.activeElement !== bossArmorInput) bossArmorInput.value = gameState.boss.armor;
 });
 
 socket.on('diceRolled', (data) => {

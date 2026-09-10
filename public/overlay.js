@@ -7,7 +7,6 @@ const projectedImage = document.getElementById('projected-image');
 // Éléments du Boss
 const bossContainer = document.getElementById('boss-container');
 const bossNameEl = document.getElementById('boss-name');
-const bossArmorEl = document.getElementById('boss-armor');
 const bossHpBar = document.getElementById('boss-hp-bar');
 const bossHpText = document.getElementById('boss-hp-text');
 
@@ -20,6 +19,13 @@ function createPlayerCard(player) {
     
     // Le contenu sera rempli par updatePlayerCard
     return card;
+}
+
+// Jusqu'à 3 fiches : affichage horizontal occupant toute la largeur.
+// À partir de 4 fiches : affichage classique en colonne (de bas en haut).
+function updatePlayerLayout() {
+    const cardCount = playerContainer.children.length;
+    playerContainer.classList.toggle('layout-row', cardCount <= 3);
 }
 
 function updatePlayerCard(player) {
@@ -59,7 +65,6 @@ function updatePlayerCard(player) {
         </div>
         
         <div class="player-stats-row">
-            <span class="stat">Armure: <span class="stat-value armor-value">${player.armor}</span></span>
             <span class="stat">Or: <span class="stat-value gold-value">${player.gold}</span></span>
         </div>
 
@@ -76,7 +81,6 @@ function updateBoss(bossData) {
     if (!bossData) return;
 
     bossNameEl.innerText = bossData.name;
-    bossArmorEl.innerText = bossData.armor;
 
     const hpPercentage = Math.max(0, Math.min(100, (bossData.hp / bossData.maxHp) * 100));
     bossHpBar.style.width = `${hpPercentage}%`;
@@ -172,6 +176,8 @@ socket.on('gameStateUpdate', (gameState) => {
             card.remove();
         }
     });
+
+    updatePlayerLayout();
 
     // Mettre à jour le boss
     if (gameState.boss) {

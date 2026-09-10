@@ -55,7 +55,6 @@ describe('Server Tests', () => {
         if (player && player.hp === 5 && player.maxHp === 20) {
           expect(player.hp).toBe(5);
           expect(player.maxHp).toBe(20);
-          expect(player.armor).toBe(15);
           expect(player.gold).toBe(100);
           resolve();
         }
@@ -66,7 +65,6 @@ describe('Server Tests', () => {
         const updateData = {
           hp_current: 5,
           hp_max: 20,
-          armor: 15,
           gold: 100
         };
         clientSocket.emit('updateStats', updateData);
@@ -103,7 +101,6 @@ describe('Server Tests', () => {
         const updateData = {
           hp_current: 10,
           hp_max: 10,
-          armor: 10,
           gold: 0,
           customStats: customStatsData
         };

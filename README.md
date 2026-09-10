@@ -7,13 +7,13 @@ Elle permet de connecter en temps réel les interfaces des **Joueurs**, du **Ma�
 ## ✨ Fonctionnalités
 
 ### 🛡️ Interface Joueur
-*   **Fiche de Personnage :** Gestion des PV (Barre de vie), Armure, Or.
+*   **Fiche de Personnage :** Gestion des PV (Barre de vie) et de l'Or. L'armure et les autres compteurs facultatifs se gèrent via les statistiques personnalisées.
 *   **Statistiques Personnalisées :** Ajout dynamique de compteurs (Mana, Points de Ki, Munitions, etc.) via un formulaire intuitif.
 *   **Panier de Dés :** Système de "Dice Tray" permettant de préparer une poignée de dés (ex: 2d6 + 1d8) et de tout lancer en une fois.
 *   **Sauvegarde de Session :** Le personnage est lié à la session du navigateur.
 
 ### 👑 Interface Maître du Jeu (MJ)
-*   **Gestion du Boss :** Contrôle en temps réel du nom, de l'armure et des PV du Boss affiché à l'écran.
+*   **Gestion du Boss :** Contrôle en temps réel du nom et des PV du Boss affiché à l'écran.
 *   **Lancer de Dés MJ :** Panier de dés identique aux joueurs pour les jets du MJ.
 *   **Projection d'Images :** Upload et affichage d'images (PNJ, Lieux, Indices) directement sur l'overlay.
 *   **Journal des Logs :** Historique de tous les lancers de dés effectués par les joueurs et le MJ.

@@ -4,9 +4,8 @@ const socket = io(window.location.origin);
 const nameInput = document.getElementById('name');
 const hpCurrentInput = document.getElementById('hp_current');
 const hpMaxInput = document.getElementById('hp_max');
-const armorInput = document.getElementById('armor');
 const goldInput = document.getElementById('gold');
-const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
+const allInputs = [hpCurrentInput, hpMaxInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
 const modButtons = document.querySelectorAll('.mod-btn');
 const diceLog = document.getElementById('dice-log');
@@ -178,7 +177,6 @@ modButtons.forEach(btn => btn.onclick = () => {
 function updateForm(player) {
     hpCurrentInput.value = player.hp;
     hpMaxInput.value = player.maxHp;
-    armorInput.value = player.armor;
     goldInput.value = player.gold;
     if (player.customStats) {
         customStats = player.customStats;
@@ -194,7 +192,6 @@ const sendStatsUpdate = debounce(() => {
         socket.emit('updateStats', {
             hp_current: hpCurrentInput.value,
             hp_max: hpMaxInput.value,
-            armor: armorInput.value,
             gold: goldInput.value,
             customStats: customStats
         });
@@ -306,10 +303,6 @@ socket.on('gameStateUpdate', (gameState) => {
         if (hpMaxInput.value != myPlayer.maxHp) {
             hpMaxInput.value = myPlayer.maxHp;
             validateInput(hpMaxInput);
-        }
-        if (armorInput.value != myPlayer.armor) {
-            armorInput.value = myPlayer.armor;
-            validateInput(armorInput);
         }
         if (goldInput.value != myPlayer.gold) {
             goldInput.value = myPlayer.gold;
