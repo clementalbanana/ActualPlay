@@ -33,18 +33,16 @@ function showToast(message, type = 'info') {
 const bossNameInput = document.getElementById('boss_name');
 const bossHpCurrentInput = document.getElementById('boss_hp_current');
 const bossHpMaxInput = document.getElementById('boss_hp_max');
-const bossArmorInput = document.getElementById('boss_armor');
 
 function updateBoss() {
     socket.emit('updateBoss', {
         name: bossNameInput.value,
         hp: parseInt(bossHpCurrentInput.value, 10),
-        maxHp: parseInt(bossHpMaxInput.value, 10),
-        armor: parseInt(bossArmorInput.value, 10)
+        maxHp: parseInt(bossHpMaxInput.value, 10)
     });
 }
 const debouncedUpdateBoss = debounce(updateBoss, 500);
-[bossNameInput, bossHpCurrentInput, bossHpMaxInput, bossArmorInput].forEach(input => {
+[bossNameInput, bossHpCurrentInput, bossHpMaxInput].forEach(input => {
     input.addEventListener('input', debouncedUpdateBoss);
 });
 
@@ -246,7 +244,6 @@ socket.on('gameStateUpdate', (gameState) => {
     if (document.activeElement !== bossNameInput) bossNameInput.value = gameState.boss.name;
     if (document.activeElement !== bossHpCurrentInput) bossHpCurrentInput.value = gameState.boss.hp;
     if (document.activeElement !== bossHpMaxInput) bossHpMaxInput.value = gameState.boss.maxHp;
-    if (document.activeElement !== bossArmorInput) bossArmorInput.value = gameState.boss.armor;
 });
 
 socket.on('diceRolled', (data) => {
@@ -258,6 +255,10 @@ socket.on('diceRolled', (data) => {
     if (data.modifier !== 0) details += (data.modifier > 0 ? ` + ${data.modifier}` : ` - ${Math.abs(data.modifier)}`);
     li.innerHTML = `<span class="font-bold text-indigo-400">${data.player}</span> : <span class="font-bold text-yellow-400">Total ${data.total}</span> <span class="text-[10px] text-gray-400">(${details})</span>`;
     document.getElementById('dice-log').prepend(li);
+});
+
+socket.on('authRequired', () => {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
 });
 
 socket.on('diceCleared', () => document.getElementById('dice-log').innerHTML = '');

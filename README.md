@@ -7,13 +7,13 @@ Elle permet de connecter en temps réel les interfaces des **Joueurs**, du **Ma�
 ## ✨ Fonctionnalités
 
 ### 🛡️ Interface Joueur
-*   **Fiche de Personnage :** Gestion des PV (Barre de vie), Armure, Or.
+*   **Fiche de Personnage :** Gestion des PV (Barre de vie) et de l'Or. L'armure et les autres compteurs facultatifs se gèrent via les statistiques personnalisées.
 *   **Statistiques Personnalisées :** Ajout dynamique de compteurs (Mana, Points de Ki, Munitions, etc.) via un formulaire intuitif.
 *   **Panier de Dés :** Système de "Dice Tray" permettant de préparer une poignée de dés (ex: 2d6 + 1d8) et de tout lancer en une fois.
 *   **Sauvegarde de Session :** Le personnage est lié à la session du navigateur.
 
 ### 👑 Interface Maître du Jeu (MJ)
-*   **Gestion du Boss :** Contrôle en temps réel du nom, de l'armure et des PV du Boss affiché à l'écran.
+*   **Gestion du Boss :** Contrôle en temps réel du nom et des PV du Boss affiché à l'écran.
 *   **Lancer de Dés MJ :** Panier de dés identique aux joueurs pour les jets du MJ.
 *   **Projection d'Images :** Upload et affichage d'images (PNJ, Lieux, Indices) directement sur l'overlay.
 *   **Journal des Logs :** Historique de tous les lancers de dés effectués par les joueurs et le MJ.
@@ -45,9 +45,36 @@ Elle permet de connecter en temps réel les interfaces des **Joueurs**, du **Ma�
 
 Une fois le serveur lancé (par défaut sur le port 3000), ouvrez votre navigateur :
 
-*   **Interface Joueur :** `http://localhost:3000/` (À ouvrir sur les téléphones/PC des joueurs)
+*   **Portail d'accueil :** `http://localhost:3000/` (Public : règles + fiches de personnages publiques en lecture seule)
+*   **Interface Joueur :** `http://localhost:3000/create` (À ouvrir sur les téléphones/PC des joueurs — ancienne URL `/`)
 *   **Interface MJ :** `http://localhost:3000/gm.html` (À ouvrir sur l'écran du MJ)
+*   **Règles :** `http://localhost:3000/regles`
 *   **Overlay :** `http://localhost:3000/overlay.html` (À ne pas ouvrir directement, voir section OBS)
+
+### 🔒 Accès protégé (joueurs / MJ)
+
+Les pages `/create` et `/gm.html` sont réservées aux participants : un premier accès
+redirige vers `/login` qui demande un mot de passe partagé. Le portail, les règles,
+les fiches publiques et l'overlay restent librement accessibles.
+
+Le mot de passe se configure via la variable d'environnement `APP_PASSWORD`
+(valeur par défaut si non défini : `ElieEnBikini!2026`).
+
+```bash
+APP_PASSWORD="MonMotDePasse" node server.js
+```
+
+### 📄 Import depuis Google Docs
+
+Sur la fiche de personnage, coller le lien de partage (ou l'ID) d'un Google Doc
+**public** (« Tous les utilisateurs disposant du lien peuvent consulter »), puis
+cliquer sur « Importer depuis Google Docs ». Le serveur lit l'export texte du
+document et remplit les statistiques trouvées sous la forme `Nom: valeur` :
+
+*   `PV` (ou `Points de Vie`) → PV courants **et** PV max
+*   `Or`
+*   toute statistique personnalisée déjà présente sur la fiche (par son nom)
+*   `Description :` → le paragraphe qui suit (affiché sur la fiche publique en lecture seule, `/fiche?id=…`)
 
 ## 🎥 Intégration OBS / Streamlabs
 

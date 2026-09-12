@@ -4,9 +4,13 @@ const socket = io(window.location.origin);
 const nameInput = document.getElementById('name');
 const hpCurrentInput = document.getElementById('hp_current');
 const hpMaxInput = document.getElementById('hp_max');
-const armorInput = document.getElementById('armor');
 const goldInput = document.getElementById('gold');
-const allInputs = [hpCurrentInput, hpMaxInput, armorInput, goldInput];
+const isPublicInput = document.getElementById('is_public');
+const googleDocInput = document.getElementById('google-doc-id');
+const googleDocError = document.getElementById('google-doc-error');
+const btnImportDoc = document.getElementById('btn-import-doc');
+const docImportResult = document.getElementById('doc-import-result');
+const allInputs = [hpCurrentInput, hpMaxInput, goldInput];
 const diceButtons = document.querySelectorAll('.dice-btn');
 const modButtons = document.querySelectorAll('.mod-btn');
 const diceLog = document.getElementById('dice-log');
@@ -178,8 +182,12 @@ modButtons.forEach(btn => btn.onclick = () => {
 function updateForm(player) {
     hpCurrentInput.value = player.hp;
     hpMaxInput.value = player.maxHp;
-    armorInput.value = player.armor;
     goldInput.value = player.gold;
+    isPublicInput.checked = !!player.isPublic;
+    if (document.activeElement !== googleDocInput) {
+        googleDocInput.value = player.googleDocId || '';
+    }
+    refreshImportButton();
     if (player.customStats) {
         customStats = player.customStats;
         renderCustomStats();
@@ -194,11 +202,152 @@ const sendStatsUpdate = debounce(() => {
         socket.emit('updateStats', {
             hp_current: hpCurrentInput.value,
             hp_max: hpMaxInput.value,
-            armor: armorInput.value,
             gold: goldInput.value,
-            customStats: customStats
+            customStats: customStats,
+            isPublic: isPublicInput.checked,
+            googleDocId: googleDocInput.value
         });
     }
+});
+
+isPublicInput.onchange = () => {
+    if (characterClaimed) sendStatsUpdate();
+};
+
+// --- Import des statistiques depuis un Google Doc ---
+// Extraction de l'ID depuis un lien de partage complet ou un ID brut collé.
+function extractDocId(input) {
+    if (typeof input !== 'string') return null;
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    const urlMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (urlMatch) return urlMatch[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) return trimmed;
+    return null;
+}
+
+function showDocError(message) {
+    googleDocError.textContent = message;
+    googleDocError.classList.remove('hidden');
+}
+function clearDocError() {
+    googleDocError.textContent = '';
+    googleDocError.classList.add('hidden');
+}
+
+// Le bouton d'import n'est visible que si un ID de document valide est renseigné.
+function refreshImportButton() {
+    const value = googleDocInput.value.trim();
+    const docId = extractDocId(value);
+    btnImportDoc.classList.toggle('hidden', !docId);
+    if (value && !docId) {
+        showDocError('Lien ou identifiant Google Docs invalide.');
+    } else {
+        clearDocError();
+    }
+}
+
+googleDocInput.oninput = refreshImportButton;
+googleDocInput.onchange = () => {
+    refreshImportButton();
+    if (characterClaimed && (extractDocId(googleDocInput.value) || googleDocInput.value.trim() === '')) {
+        sendStatsUpdate();
+    }
+};
+
+let importTimeoutId = null;
+function resetImportButton() {
+    clearTimeout(importTimeoutId);
+    btnImportDoc.disabled = false;
+    btnImportDoc.textContent = 'Importer depuis Google Docs';
+}
+
+btnImportDoc.onclick = () => {
+    if (!characterClaimed) {
+        showDocError("Choisissez d'abord un nom de personnage.");
+        return;
+    }
+    const docId = extractDocId(googleDocInput.value);
+    if (!docId) {
+        showDocError('Lien ou identifiant Google Docs invalide.');
+        return;
+    }
+    clearDocError();
+    docImportResult.classList.add('hidden');
+    btnImportDoc.disabled = true;
+    btnImportDoc.textContent = 'Import en cours…';
+    socket.emit('importGoogleDocStats', { docId: googleDocInput.value });
+    // Filet de sécurité si le serveur ne répond jamais.
+    importTimeoutId = setTimeout(() => {
+        resetImportButton();
+        renderImportError("Le serveur n'a pas répondu. Réessayez.");
+    }, 15000);
+};
+
+function renderImportError(message) {
+    docImportResult.innerHTML = '';
+    docImportResult.classList.remove('hidden', 'border-gray-700');
+    docImportResult.classList.add('border-red-500');
+    const p = document.createElement('p');
+    p.className = 'text-red-400';
+    p.textContent = message;
+    docImportResult.appendChild(p);
+}
+
+function renderImportSummary(changes, warnings) {
+    docImportResult.innerHTML = '';
+    docImportResult.classList.remove('hidden', 'border-red-500');
+    docImportResult.classList.add('border-gray-700');
+
+    const title = document.createElement('p');
+    title.className = 'font-bold text-green-400';
+    title.textContent = 'Import terminé';
+    docImportResult.appendChild(title);
+
+    if (changes.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'text-gray-400';
+        p.textContent = 'Aucune valeur modifiée : la fiche correspond déjà au document.';
+        docImportResult.appendChild(p);
+    } else {
+        const ul = document.createElement('ul');
+        ul.className = 'space-y-1';
+        changes.forEach(change => {
+            const li = document.createElement('li');
+            li.className = 'text-gray-200';
+            li.textContent = change.note
+                ? `${change.label} : ${change.note}`
+                : `${change.label} : ${change.before} → ${change.after}`;
+            ul.appendChild(li);
+        });
+        docImportResult.appendChild(ul);
+    }
+
+    if (warnings.length > 0) {
+        const warnTitle = document.createElement('p');
+        warnTitle.className = 'font-semibold text-amber-400 pt-1';
+        warnTitle.textContent = 'Avertissements';
+        docImportResult.appendChild(warnTitle);
+        const ul = document.createElement('ul');
+        ul.className = 'space-y-1 list-disc list-inside';
+        warnings.forEach(warning => {
+            const li = document.createElement('li');
+            li.className = 'text-amber-300/90 text-xs';
+            li.textContent = warning;
+            ul.appendChild(li);
+        });
+        docImportResult.appendChild(ul);
+    }
+}
+
+socket.on('googleDocImportResult', (result) => {
+    resetImportButton();
+    if (!result || !result.ok) {
+        renderImportError(result && result.error ? result.error : "L'import a échoué.");
+        return;
+    }
+    if (result.player) updateForm(result.player);
+    renderImportSummary(result.changes || [], result.warnings || []);
 });
 
 function renderCustomStats() {
@@ -206,10 +355,16 @@ function renderCustomStats() {
     customStats.forEach((stat, index) => {
         const percentage = Math.min(100, Math.max(0, (stat.current / stat.max) * 100));
         const div = document.createElement('div');
-        div.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
+        div.className = 'custom-stat-card bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm transition-all hover:border-indigo-500';
+        div.dataset.index = index;
         div.innerHTML = `
             <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <button class="stat-drag-handle text-gray-500 hover:text-gray-300 p-1 -ml-1 active:cursor-grabbing" aria-label="Glisser pour réordonner" title="Glisser pour réordonner">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 4a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 4zM7 10a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 10zM7 16a1.25 1.25 0 11-2.5 0A1.25 1.25 0 017 16zM15.5 4a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM15.5 10a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM15.5 16a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0z" />
+                        </svg>
+                    </button>
                     <input type="color" value="${stat.color || '#4F46E5'}" onchange="updateStatColor(${index}, this.value)">
                     <span class="text-sm font-bold text-gray-200">${stat.name}</span>
                 </div>
@@ -232,6 +387,63 @@ function renderCustomStats() {
         `;
         customStatsList.appendChild(div);
     });
+    setupStatDragHandles();
+}
+
+// --- Réordonnancement des stats perso par glisser-déposer ---
+// Fonctionne à la souris et au tactile (Pointer Events). L'ordre du tableau
+// customStats est envoyé au serveur, l'overlay se met donc à jour tout seul.
+let statDrag = null;
+
+function setupStatDragHandles() {
+    customStatsList.querySelectorAll('.stat-drag-handle').forEach(handle => {
+        handle.addEventListener('pointerdown', onStatDragStart);
+    });
+}
+
+function onStatDragStart(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const card = e.target.closest('.custom-stat-card');
+    if (!card) return;
+    e.preventDefault();
+
+    statDrag = { card };
+    card.classList.add('opacity-40', 'ring-2', 'ring-indigo-500');
+
+    document.addEventListener('pointermove', onStatDragMove);
+    document.addEventListener('pointerup', onStatDragEnd, { once: true });
+    document.addEventListener('pointercancel', onStatDragEnd, { once: true });
+}
+
+function onStatDragMove(e) {
+    if (!statDrag) return;
+    const others = [...customStatsList.querySelectorAll('.custom-stat-card')]
+        .filter(el => el !== statDrag.card);
+    const before = others.find(el => {
+        const r = el.getBoundingClientRect();
+        return e.clientY < r.top + r.height / 2;
+    });
+    if (before) {
+        customStatsList.insertBefore(statDrag.card, before);
+    } else {
+        customStatsList.appendChild(statDrag.card);
+    }
+}
+
+function onStatDragEnd() {
+    if (!statDrag) return;
+    document.removeEventListener('pointermove', onStatDragMove);
+    statDrag.card.classList.remove('opacity-40', 'ring-2', 'ring-indigo-500');
+
+    const newOrder = [...customStatsList.querySelectorAll('.custom-stat-card')]
+        .map(el => customStats[parseInt(el.dataset.index, 10)])
+        .filter(Boolean);
+    statDrag = null;
+
+    const changed = newOrder.some((s, i) => s !== customStats[i]);
+    customStats = newOrder;
+    renderCustomStats();
+    if (changed) sendStatsUpdate();
 }
 
 window.updateStatColor = (idx, color) => {
@@ -307,10 +519,6 @@ socket.on('gameStateUpdate', (gameState) => {
             hpMaxInput.value = myPlayer.maxHp;
             validateInput(hpMaxInput);
         }
-        if (armorInput.value != myPlayer.armor) {
-            armorInput.value = myPlayer.armor;
-            validateInput(armorInput);
-        }
         if (goldInput.value != myPlayer.gold) {
             goldInput.value = myPlayer.gold;
             validateInput(goldInput);
@@ -318,6 +526,14 @@ socket.on('gameStateUpdate', (gameState) => {
         if (JSON.stringify(myPlayer.customStats) !== JSON.stringify(customStats)) {
              customStats = myPlayer.customStats || [];
              renderCustomStats();
+        }
+        if (document.activeElement !== isPublicInput && isPublicInput.checked !== !!myPlayer.isPublic) {
+             isPublicInput.checked = !!myPlayer.isPublic;
+        }
+        if ('googleDocId' in myPlayer && document.activeElement !== googleDocInput
+            && (myPlayer.googleDocId || '') !== googleDocInput.value.trim()) {
+             googleDocInput.value = myPlayer.googleDocId || '';
+             refreshImportButton();
         }
     }
 });
@@ -344,6 +560,11 @@ socket.on('kicked', () => {
     alert("Expulsé par le MJ.");
     localStorage.removeItem('jdr_playerName');
     window.location.reload();
+});
+
+// Cookie de connexion expiré / invalide en cours de session : retour au login.
+socket.on('authRequired', () => {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
 });
 
 socket.on('disconnect', () => { characterClaimed = false; nameInput.disabled = false; nameInput.classList.remove('bg-gray-600'); });
